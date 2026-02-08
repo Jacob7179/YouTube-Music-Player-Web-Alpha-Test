@@ -4015,40 +4015,8 @@ function syncLyricsToTime(currentTime) {
     }
 }
 
-// Add translation control buttons
-function addTranslationControls() {
-    const lyricsHeader = document.getElementById("lyricsHeader");
-    if (!lyricsHeader) return;
-    
-    // Add translation toggle button
-    if (!document.getElementById("toggleTranslationBtn")) {
-        const toggleBtn = document.createElement("button");
-        toggleBtn.id = "toggleTranslationBtn";
-        toggleBtn.className = "btn btn-sm btn-outline-secondary";
-        toggleBtn.innerHTML = `<i class='bx bx-transfer'></i>`;
-        toggleBtn.title = currentLang === 'zh' ? '切换显示顺序' : 'Toggle display order';
-        toggleBtn.addEventListener("click", toggleTranslationOrder);
-        
-        // Add to lyrics controls
-        const lyricsControls = document.querySelector(".lyrics-controls");
-        if (lyricsControls) {
-            lyricsControls.appendChild(toggleBtn);
-        }
-    }
-}
-
 function toggleTranslationOrder() {
     showOriginalFirst = !showOriginalFirst;
-    
-    // Update button title
-    const btn = document.getElementById("toggleTranslationBtn");
-    const targetLang = currentLang === 'zh' ? 'zh' : 'en';
-    btn.title = showOriginalFirst ? 
-        (targetLang === 'zh' ? '原文优先' : 'Original first') : 
-        (targetLang === 'zh' ? '译文优先' : 'Translation first');
-    btn.innerHTML = showOriginalFirst ? 
-        `<i class='bx bx-sort-up'></i>` : 
-        `<i class='bx bx-sort-down'></i>`;
     
     // Re-render lyrics with new order
     if (lyricsData) {
@@ -4060,8 +4028,10 @@ function toggleTranslationOrder() {
     }
 }
 
-// Initialize translation controls when DOM loads
-document.addEventListener("DOMContentLoaded", addTranslationControls);
+function setTranslationOrder(order) {
+    showOriginalFirst = order; // true for original first, false for translation first
+    toggleTranslationOrder();
+}
 
 // Add to your settings initialization
 document.getElementById("translationToggle")?.addEventListener("change", function() {
