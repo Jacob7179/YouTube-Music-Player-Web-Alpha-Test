@@ -3511,10 +3511,7 @@ async function translateLyrics(text, sourceLang = 'auto', targetLang = currentLa
     }
     
     // Don't translate if target language is same as source
-    if ((sourceLang === 'en' && targetLang === 'en') || 
-        (sourceLang === 'zh' && targetLang === 'zh') ||
-        (sourceLang === 'ja' && targetLang === 'ja') ||
-        (sourceLang === 'ko' && targetLang === 'ko')) {
+    if (sourceLang === targetLang) {
         return text;
     }
     
@@ -3528,6 +3525,29 @@ async function translateLyrics(text, sourceLang = 'auto', targetLang = currentLa
         // Service 1: LibreTranslate (primary)
         async (text, source, target) => {
             try {
+                // LibreTranslate language codes mapping
+                const libreCodes = {
+                    'en': 'en',
+                    'zh': 'zh',
+                    'ja': 'ja',
+                    'ko': 'ko'
+                };
+                
+                const libreSource = libreCodes[source] || source;
+                const libreTarget = libreCodes[target] || target;
+                
+                // Skip if LibreTranslate doesn't support this language pair directly
+                const supportedPairs = [
+                    'en-zh', 'zh-en',
+                    'en-ja', 'ja-en',
+                    'en-ko', 'ko-en'
+                ];
+                
+                if (!supportedPairs.includes(`${libreSource}-${libreTarget}`) && 
+                    !supportedPairs.includes(`${libreTarget}-${libreSource}`)) {
+                    throw new Error('Language pair not directly supported');
+                }
+                
                 const response = await fetch('https://libretranslate.com/translate', {
                     method: 'POST',
                     headers: {
@@ -3535,8 +3555,8 @@ async function translateLyrics(text, sourceLang = 'auto', targetLang = currentLa
                     },
                     body: JSON.stringify({
                         q: text,
-                        source: source,
-                        target: target,
+                        source: libreSource,
+                        target: libreTarget,
                         format: 'text'
                     })
                 });
@@ -3551,12 +3571,17 @@ async function translateLyrics(text, sourceLang = 'auto', targetLang = currentLa
             }
         },
         
-        // Service 2: MyMemory (fallback 1)
+        // Service 2: MyMemory (fallback 1) - better for CJK languages
         async (text, source, target) => {
             try {
                 // MyMemory API uses language codes like "en" for English, "zh-CN" for Chinese
-                const myMemorySource = source === 'zh' ? 'zh-CN' : source;
-                const myMemoryTarget = target === 'zh' ? 'zh-CN' : target;
+                const myMemorySource = source === 'zh' ? 'zh-CN' : 
+                                     source === 'ja' ? 'ja' :
+                                     source === 'ko' ? 'ko' : source;
+                
+                const myMemoryTarget = target === 'zh' ? 'zh-CN' :
+                                     target === 'ja' ? 'ja' :
+                                     target === 'ko' ? 'ko' : target;
                 
                 const response = await fetch(
                     `https://api.mymemory.translated.net/get?q=${encodeURIComponent(text)}&langpair=${myMemorySource}|${myMemoryTarget}`
@@ -3572,55 +3597,31 @@ async function translateLyrics(text, sourceLang = 'auto', targetLang = currentLa
             }
         },
         
-        // Service 3: Simple dictionary-based fallback for common phrases
+        // Service 3: Google Translate (unofficial API)
         async (text, source, target) => {
             try {
-                // Only attempt if text is short (common phrases)
-                if (text.length > 100) throw new Error('Text too long for simple translation');
-                
-                const commonTranslations = {
-                    'en-zh': {
-                        'love': '爱',
-                        'you': '你',
-                        'me': '我',
-                        'hello': '你好',
-                        'thank you': '谢谢',
-                        'goodbye': '再见',
-                        'music': '音乐',
-                        'song': '歌曲',
-                        'heart': '心'
-                    },
-                    'zh-en': {
-                        '爱': 'love',
-                        '你': 'you',
-                        '我': 'me',
-                        '你好': 'hello',
-                        '谢谢': 'thank you',
-                        '再见': 'goodbye',
-                        '音乐': 'music',
-                        '歌曲': 'song',
-                        '心': 'heart'
-                    }
+                const googleLangCodes = {
+                    'en': 'en',
+                    'zh': 'zh-CN',
+                    'ja': 'ja',
+                    'ko': 'ko'
                 };
                 
-                const translationKey = `${source}-${target}`;
-                const dictionary = commonTranslations[translationKey];
+                const googleSource = googleLangCodes[source] || source;
+                const googleTarget = googleLangCodes[target] || target;
                 
-                if (!dictionary) throw new Error('No dictionary for this language pair');
+                // Use a public Google Translate proxy
+                const response = await fetch(
+                    `https://translate.googleapis.com/translate_a/single?client=gtx&sl=${googleSource}&tl=${googleTarget}&dt=t&q=${encodeURIComponent(text)}`
+                );
                 
-                // Try to find and replace common words
-                let translated = text;
-                for (const [word, translation] of Object.entries(dictionary)) {
-                    const regex = new RegExp(`\\b${word}\\b`, 'gi');
-                    translated = translated.replace(regex, translation);
-                }
+                if (!response.ok) throw new Error('Google Translate failed');
                 
-                // If nothing was translated, throw error
-                if (translated === text) throw new Error('No translations found in dictionary');
-                
-                return translated;
+                const data = await response.json();
+                // Extract translation from the response format
+                return data[0].map(item => item[0]).join('');
             } catch (error) {
-                console.log('Simple dictionary failed');
+                console.log('Google Translate failed');
                 throw error;
             }
         }
@@ -3681,11 +3682,25 @@ async function detectLanguage(text) {
     const japanesePattern = /[\u3040-\u309f\u30a0-\u30ff\u4e00-\u9fff]/; // Japanese
     const koreanPattern = /[\uac00-\ud7af]/; // Korean
     
-    if (chinesePattern.test(text)) return 'zh';
-    if (japanesePattern.test(text)) return 'ja';
-    if (koreanPattern.test(text)) return 'ko';
+    // Check character counts
+    let chineseCount = 0;
+    let japaneseCount = 0;
+    let koreanCount = 0;
+    let englishCount = 0;
     
-    // Default to English for Latin scripts
+    for (let char of text) {
+        if (chinesePattern.test(char)) chineseCount++;
+        if (japanesePattern.test(char)) japaneseCount++;
+        if (koreanPattern.test(char)) koreanCount++;
+        if (/[a-zA-Z]/.test(char)) englishCount++;
+    }
+    
+    // If there's a significant amount of CJK characters, use that language
+    if (chineseCount > japaneseCount && chineseCount > koreanCount) return 'zh';
+    if (japaneseCount > chineseCount && japaneseCount > koreanCount) return 'ja';
+    if (koreanCount > chineseCount && koreanCount > japaneseCount) return 'ko';
+    
+    // Fallback to English for Latin scripts or mixed content
     return 'en';
 }
 
@@ -3708,7 +3723,24 @@ async function translateLyricsLines(lines, targetLang) {
         const chunkText = chunk.map(l => l.text).join('\n');
         
         try {
-            const translatedChunk = await translateLyrics(chunkText, sourceLang, targetLang);
+            let translatedChunk;
+            
+            // First, detect if we need English as an intermediate language
+            const sourceIsCJK = ['zh', 'ja', 'ko'].includes(sourceLang);
+            const targetIsCJK = ['zh', 'ja', 'ko'].includes(targetLang);
+            
+            if (sourceIsCJK && targetIsCJK && sourceLang !== targetLang) {
+                // CJK-to-CJK translation: Try English as intermediate
+                // Step 1: Translate to English first
+                const englishChunk = await translateLyrics(chunkText, sourceLang, 'en');
+                
+                // Step 2: Translate from English to target language
+                translatedChunk = await translateLyrics(englishChunk, 'en', targetLang);
+            } else {
+                // Direct translation
+                translatedChunk = await translateLyrics(chunkText, sourceLang, targetLang);
+            }
+            
             const translatedLinesChunk = translatedChunk.split('\n');
             
             // Ensure we have the same number of lines
@@ -3852,11 +3884,30 @@ async function fetchLyricsWithTranslation(title, artist) {
             const parsed = parseLrc(lyrics);
             lyricsData = { isLrc: true, lrcLines: parsed };
             
+            // Detect source language
+            const sourceLang = await detectLanguage(parsed.map(l => l.text).join(' '));
+            
             // Translate if enabled
             if (translationEnabled) {
                 const translateStatus = currentLang === 'zh' ? '正在翻译...' : 'Translating...';
                 meta.textContent = `${t.lyricsSyncedFound} ${artist} – ${title} (${translateStatus})`;
-                const translatedLines = await translateLyricsLines(parsed, targetLang);
+                
+                // Check if we need English as intermediate
+                let translatedLines;
+                if (sourceLang === 'ja' && targetLang === 'zh') {
+                    // Japanese to Chinese via English
+                    const englishLines = await translateLyricsLines(parsed, 'en');
+                    translatedLines = await Promise.all(
+                        englishLines.map(async (line, i) => {
+                            if (line === parsed[i].text) return line; // No translation
+                            return await translateLyrics(line, 'en', 'zh');
+                        })
+                    );
+                } else {
+                    // Direct translation
+                    translatedLines = await translateLyricsLines(parsed, targetLang);
+                }
+                
                 translatedLyrics = translatedLines;
                 
                 // Check if translation actually happened
@@ -3879,8 +3930,20 @@ async function fetchLyricsWithTranslation(title, artist) {
             if (translationEnabled) {
                 const translateStatus = currentLang === 'zh' ? '正在翻译...' : 'Translating...';
                 meta.textContent = `${t.lyricsPlainFound} ${artist} – ${title} (${translateStatus})`;
+                
                 const sourceLang = await detectLanguage(lyrics);
-                const translated = await translateLyrics(lyrics, sourceLang, targetLang);
+                let translated;
+                
+                // Check if we need English as intermediate
+                if (sourceLang === 'ja' && targetLang === 'zh') {
+                    // Japanese to Chinese via English
+                    const englishTranslation = await translateLyrics(lyrics, sourceLang, 'en');
+                    translated = await translateLyrics(englishTranslation, 'en', targetLang);
+                } else {
+                    // Direct translation
+                    translated = await translateLyrics(lyrics, sourceLang, targetLang);
+                }
+                
                 translatedLyrics = translated;
                 
                 // Check if translation actually happened
