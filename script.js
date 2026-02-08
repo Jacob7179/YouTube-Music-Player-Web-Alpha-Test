@@ -706,9 +706,9 @@ async function searchYouTube() {
             
             // Handle specific error codes with translations
             if (response.status === 403) {
-                searchError.textContent = translations[currentLang].youtubeApi403Error || `YouTube API Error: 403 - Quota Exceeded.`;
+                searchError.innerHTML = `<i class='bx bx-error'></i> ${translations[currentLang].youtubeApi403Error}`;
             } else {
-                searchError.textContent = `YouTube API Error: ${response.status} ${response.statusText}. Check console for details.`;
+                searchError.innerHTML = `<i class='bx bx-error'></i> ${translations[currentLang].youtubeSearchError || `YouTube API Error: ${response.status} ${response.statusText}`}`;
             }
             
             searchError.classList.remove('d-none');
@@ -2650,8 +2650,8 @@ let lyricsState = {
 };
 
 async function fetchLyrics(title, artist) {
-  const tryFetch = async (a, t) => {
-    const url = `https://lrclib.net/api/get?artist_name=${encodeURIComponent(a)}&track_name=${encodeURIComponent(t)}`;
+  const tryFetch = async (artistName, trackName) => {
+    const url = `https://lrclib.net/api/get?artist_name=${encodeURIComponent(artistName)}&track_name=${encodeURIComponent(trackName)}`;
     console.log("Trying:", url);
 
     const proxy = `https://api.allorigins.win/get?url=${encodeURIComponent(url)}`;
@@ -3188,6 +3188,27 @@ function applyLanguage(lang) {
         textEl.textContent = t.lyricsNoLoad;
     }
 
+    if (translationEnabled && lyricsData && lyricsState.status !== "loading") {
+        const title = lyricsState.title;
+        const artist = lyricsState.artist;
+        if (title && artist) {
+            // Show loading message for translation
+            const meta = document.getElementById("lyricsMeta");
+            const textEl = document.getElementById("lyricsText");
+            const translateStatus = lang === 'zh' ? '正在翻译...' : 'Translating...';
+            
+            if (lyricsState.status === "synced") {
+                meta.textContent = `${t.lyricsSyncedFound} ${artist} – ${title} (${translateStatus})`;
+            } else if (lyricsState.status === "plain") {
+                meta.textContent = `${t.lyricsPlainFound} ${artist} – ${title} (${translateStatus})`;
+            }
+            textEl.textContent = translateStatus;
+            
+            // Fetch lyrics with translation to new language
+            fetchLyricsWithTranslation(title, artist);
+        }
+    }
+
     document.querySelector("#toggleSyncBtn") && (document.querySelector("#toggleSyncBtn").textContent = t.autoSyncOn);
     document.querySelector("#refreshLyricsBtn") && (document.querySelector("#refreshLyricsBtn").textContent = t.refresh);
     document.querySelector("#openRawBtn") && (document.querySelector("#openRawBtn").textContent = t.raw);
@@ -3256,12 +3277,20 @@ function applyLanguage(lang) {
     if (searchError && !searchError.classList.contains("d-none")) {
         const currentErrorText = searchError.textContent || searchError.innerText;
         
-        // Check if it's an API key error (contains "API Key" or similar)
-        if (currentErrorText.includes("API") || currentErrorText.includes("config.js") || currentErrorText.includes("YOUR_YOUTUBE_API_KEY")) {
+        // Check what type of error is currently displayed and preserve it
+        if (currentErrorText.includes("403") || currentErrorText.includes("403") || currentErrorText.includes("daily limit")) {
+            // This is a quota exceeded error - use the specific translation
+            searchError.innerHTML = `<i class='bx bx-error'></i> ${t.youtubeApi403Error}`;
+        } else if (currentErrorText.includes("API Key is not configured") || currentErrorText.includes("config.js") || currentErrorText.includes("YOUR_YOUTUBE_API_KEY")) {
+            // This is an API key configuration error
             searchError.innerHTML = `<i class='bx bx-error'></i> ${t.youtubeApiKeyError}`;
         } else if (currentErrorText.includes("Unable to search") || currentErrorText.includes("internet connection")) {
-            // It's a general search error
+            // This is a general search error
             searchError.innerHTML = `<i class='bx bx-error'></i> ${t.youtubeSearchError}`;
+        } else {
+            // For any other error, preserve the original text but update the icon
+            const errorText = currentErrorText.replace(/^⚠\s*/, '').replace(/^<i class='bx bx-error'><\/i>\s*/, '');
+            searchError.innerHTML = `<i class='bx bx-error'></i> ${errorText}`;
         }
     }
     
@@ -3565,12 +3594,50 @@ async function translateLyrics(text, sourceLang = 'auto', targetLang = currentLa
         return text;
     }
     
-    // Try multiple translation services as fallback
+    // Split long text into chunks for translation
+    const MAX_CHUNK_LENGTH = 300; // Reduced for safety
+    const chunks = [];
+    
+    if (text.length > MAX_CHUNK_LENGTH) {
+        // Split by newlines first
+        const lines = text.split('\n');
+        let currentChunk = '';
+        
+        for (let line of lines) {
+            if ((currentChunk + line).length <= MAX_CHUNK_LENGTH) {
+                currentChunk += line + '\n';
+            } else {
+                if (currentChunk.trim()) chunks.push(currentChunk.trim());
+                // If a single line is too long, split it by sentence
+                if (line.length > MAX_CHUNK_LENGTH) {
+                    const sentences = line.match(/[^。！？.!?]+[。！？.!?]*/g) || [line];
+                    let sentenceChunk = '';
+                    for (let sentence of sentences) {
+                        if ((sentenceChunk + sentence).length <= MAX_CHUNK_LENGTH) {
+                            sentenceChunk += sentence;
+                        } else {
+                            if (sentenceChunk.trim()) chunks.push(sentenceChunk.trim());
+                            sentenceChunk = sentence;
+                        }
+                    }
+                    if (sentenceChunk.trim()) chunks.push(sentenceChunk.trim());
+                } else {
+                    currentChunk = line + '\n';
+                }
+            }
+        }
+        if (currentChunk.trim()) chunks.push(currentChunk.trim());
+    } else {
+        chunks.push(text);
+    }
+    
+    console.log(`Split text into ${chunks.length} chunks for translation`);
+    
+    // Try multiple translation services
     const translationServices = [
-        // Service 1: LibreTranslate (primary)
-        async (text, source, target) => {
+        // Service 1: LibreTranslate
+        async (textChunk, source, target) => {
             try {
-                // LibreTranslate language codes mapping
                 const libreCodes = {
                     'en': 'en',
                     'zh': 'zh',
@@ -3581,25 +3648,13 @@ async function translateLyrics(text, sourceLang = 'auto', targetLang = currentLa
                 const libreSource = libreCodes[source] || source;
                 const libreTarget = libreCodes[target] || target;
                 
-                // Skip if LibreTranslate doesn't support this language pair directly
-                const supportedPairs = [
-                    'en-zh', 'zh-en',
-                    'en-ja', 'ja-en',
-                    'en-ko', 'ko-en'
-                ];
-                
-                if (!supportedPairs.includes(`${libreSource}-${libreTarget}`) && 
-                    !supportedPairs.includes(`${libreTarget}-${libreSource}`)) {
-                    throw new Error('Language pair not directly supported');
-                }
-                
                 const response = await fetch('https://libretranslate.com/translate', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
                     },
                     body: JSON.stringify({
-                        q: text,
+                        q: textChunk,
                         source: libreSource,
                         target: libreTarget,
                         format: 'text'
@@ -3611,15 +3666,14 @@ async function translateLyrics(text, sourceLang = 'auto', targetLang = currentLa
                 const data = await response.json();
                 return data.translatedText;
             } catch (error) {
-                console.log('LibreTranslate failed, trying next service');
+                console.log('LibreTranslate failed for chunk, trying next service');
                 throw error;
             }
         },
         
-        // Service 2: MyMemory (fallback 1) - better for CJK languages
-        async (text, source, target) => {
+        // Service 2: MyMemory
+        async (textChunk, source, target) => {
             try {
-                // MyMemory API uses language codes like "en" for English, "zh-CN" for Chinese
                 const myMemorySource = source === 'zh' ? 'zh-CN' : 
                                      source === 'ja' ? 'ja' :
                                      source === 'ko' ? 'ko' : source;
@@ -3629,7 +3683,7 @@ async function translateLyrics(text, sourceLang = 'auto', targetLang = currentLa
                                      target === 'ko' ? 'ko' : target;
                 
                 const response = await fetch(
-                    `https://api.mymemory.translated.net/get?q=${encodeURIComponent(text)}&langpair=${myMemorySource}|${myMemoryTarget}`
+                    `https://api.mymemory.translated.net/get?q=${encodeURIComponent(textChunk)}&langpair=${myMemorySource}|${myMemoryTarget}`
                 );
                 
                 if (!response.ok) throw new Error('MyMemory failed');
@@ -3637,69 +3691,62 @@ async function translateLyrics(text, sourceLang = 'auto', targetLang = currentLa
                 const data = await response.json();
                 return data.responseData.translatedText;
             } catch (error) {
-                console.log('MyMemory failed, trying next service');
-                throw error;
-            }
-        },
-        
-        // Service 3: Google Translate (unofficial API)
-        async (text, source, target) => {
-            try {
-                const googleLangCodes = {
-                    'en': 'en',
-                    'zh': 'zh-CN',
-                    'ja': 'ja',
-                    'ko': 'ko'
-                };
-                
-                const googleSource = googleLangCodes[source] || source;
-                const googleTarget = googleLangCodes[target] || target;
-                
-                // Use a public Google Translate proxy
-                const response = await fetch(
-                    `https://translate.googleapis.com/translate_a/single?client=gtx&sl=${googleSource}&tl=${googleTarget}&dt=t&q=${encodeURIComponent(text)}`
-                );
-                
-                if (!response.ok) throw new Error('Google Translate failed');
-                
-                const data = await response.json();
-                // Extract translation from the response format
-                return data[0].map(item => item[0]).join('');
-            } catch (error) {
-                console.log('Google Translate failed');
+                console.log('MyMemory failed for chunk, trying next service');
                 throw error;
             }
         }
     ];
     
+    // Translate each chunk
+    const translatedChunks = [];
     let lastError = null;
     
-    // Try each service in order
-    for (let i = 0; i < translationServices.length; i++) {
-        try {
-            const translatedText = await translationServices[i](text, sourceLang, targetLang);
-            
-            // Validate that we got a translation
-            if (translatedText && translatedText !== text) {
-                // Cache the translation
-                translationCache[cacheKey] = {
-                    translation: translatedText,
-                    timestamp: Date.now()
-                };
-                localStorage.setItem('lyricsTranslationCache', JSON.stringify(translationCache));
+    for (let i = 0; i < chunks.length; i++) {
+        const chunk = chunks[i];
+        let chunkTranslated = false;
+        
+        // Try each service for this chunk
+        for (let serviceIndex = 0; serviceIndex < translationServices.length; serviceIndex++) {
+            try {
+                const translatedText = await translationServices[serviceIndex](chunk, sourceLang, targetLang);
                 
-                console.log(`Translation successful with service ${i + 1}`);
-                return translatedText;
+                if (translatedText && translatedText !== chunk) {
+                    translatedChunks.push(translatedText);
+                    chunkTranslated = true;
+                    console.log(`Chunk ${i+1}/${chunks.length} translated successfully with service ${serviceIndex + 1}`);
+                    
+                    // Small delay between chunks
+                    if (i < chunks.length - 1) {
+                        await new Promise(resolve => setTimeout(resolve, 500));
+                    }
+                    break;
+                }
+            } catch (error) {
+                lastError = error;
+                console.log(`Translation service ${serviceIndex + 1} failed for chunk ${i+1}:`, error.message);
             }
-        } catch (error) {
-            lastError = error;
-            console.log(`Translation service ${i + 1} failed:`, error.message);
+        }
+        
+        // If no service worked for this chunk, use original text
+        if (!chunkTranslated) {
+            console.log(`All translation services failed for chunk ${i+1}, using original text`);
+            translatedChunks.push(chunk);
         }
     }
     
-    // If all services fail, return original text with a note
-    console.warn('All translation services failed, returning original text');
-    return text;
+    const translatedText = translatedChunks.join('\n');
+    
+    // Only cache if we actually got a translation
+    if (translatedText !== text) {
+        translationCache[cacheKey] = {
+            translation: translatedText,
+            timestamp: Date.now()
+        };
+        localStorage.setItem('lyricsTranslationCache', JSON.stringify(translationCache));
+        console.log("Translation cached successfully");
+    }
+    
+    return translatedText;
 }
 
 function clearExpiredTranslationCache() {
@@ -3762,45 +3809,87 @@ async function translateLyricsLines(lines, targetLang) {
     
     const translatedLines = [];
     
-    // Translate in chunks to avoid overwhelming the API
-    for (let i = 0; i < lines.length; i += 5) {
-        const chunk = lines.slice(i, i + 5);
-        const chunkText = chunk.map(l => l.text).join('\n');
+    // Group lines into logical chunks (verses/stanzas)
+    let currentChunk = '';
+    const chunks = [];
+    const chunkIndices = [];
+    
+    for (let i = 0; i < lines.length; i++) {
+        const lineText = lines[i].text;
+        
+        // Start a new chunk if:
+        // 1. Current chunk is getting too long
+        // 2. Line is empty (paragraph break)
+        // 3. Every 4 lines (natural stanza)
+        if (currentChunk.length + lineText.length > 200 || 
+            lineText.trim() === '' || 
+            (i > 0 && i % 4 === 0)) {
+            if (currentChunk.trim()) {
+                chunks.push(currentChunk.trim());
+                chunkIndices.push(i - 1);
+            }
+            currentChunk = lineText + '\n';
+        } else {
+            currentChunk += lineText + '\n';
+        }
+    }
+    
+    if (currentChunk.trim()) {
+        chunks.push(currentChunk.trim());
+        chunkIndices.push(lines.length - 1);
+    }
+    
+    // Translate each chunk
+    for (let chunkIndex = 0; chunkIndex < chunks.length; chunkIndex++) {
+        const chunk = chunks[chunkIndex];
+        const endIndex = chunkIndices[chunkIndex];
+        const startIndex = chunkIndex === 0 ? 0 : chunkIndices[chunkIndex - 1] + 1;
         
         try {
             let translatedChunk;
             
-            // First, detect if we need English as an intermediate language
+            // Handle CJK-to-CJK translation via English
             const sourceIsCJK = ['zh', 'ja', 'ko'].includes(sourceLang);
             const targetIsCJK = ['zh', 'ja', 'ko'].includes(targetLang);
             
             if (sourceIsCJK && targetIsCJK && sourceLang !== targetLang) {
                 // CJK-to-CJK translation: Try English as intermediate
-                // Step 1: Translate to English first
-                const englishChunk = await translateLyrics(chunkText, sourceLang, 'en');
-                
-                // Step 2: Translate from English to target language
+                const englishChunk = await translateLyrics(chunk, sourceLang, 'en');
                 translatedChunk = await translateLyrics(englishChunk, 'en', targetLang);
             } else {
                 // Direct translation
-                translatedChunk = await translateLyrics(chunkText, sourceLang, targetLang);
+                translatedChunk = await translateLyrics(chunk, sourceLang, targetLang);
             }
             
             const translatedLinesChunk = translatedChunk.split('\n');
             
-            // Ensure we have the same number of lines
-            for (let j = 0; j < chunk.length; j++) {
-                translatedLines.push(translatedLinesChunk[j] || chunk[j].text);
+            // Map translated lines back to original line indices
+            for (let i = startIndex; i <= endIndex; i++) {
+                const relativeIndex = i - startIndex;
+                if (relativeIndex < translatedLinesChunk.length) {
+                    translatedLines[i] = translatedLinesChunk[relativeIndex].trim() || lines[i].text;
+                } else {
+                    translatedLines[i] = lines[i].text;
+                }
             }
         } catch (error) {
             // If translation fails, use original text for this chunk
-            for (let j = 0; j < chunk.length; j++) {
-                translatedLines.push(chunk[j].text);
+            for (let i = startIndex; i <= endIndex; i++) {
+                translatedLines[i] = lines[i].text;
             }
         }
         
-        // Small delay to be respectful to the API
-        await new Promise(resolve => setTimeout(resolve, 100));
+        // Delay between chunks
+        if (chunkIndex < chunks.length - 1) {
+            await new Promise(resolve => setTimeout(resolve, 800));
+        }
+    }
+    
+    // Fill any missing lines with original text
+    for (let i = 0; i < lines.length; i++) {
+        if (!translatedLines[i]) {
+            translatedLines[i] = lines[i].text;
+        }
     }
     
     return translatedLines;
@@ -3885,8 +3974,12 @@ async function loadLyricsFor(title, artist) {
 }
 
 async function fetchLyricsWithTranslation(title, artist) {
-    const tryFetch = async (a, t) => {
-        const url = `https://lrclib.net/api/get?artist_name=${encodeURIComponent(a)}&track_name=${encodeURIComponent(t)}`;
+    // Define t at the beginning to avoid scope issues
+    const t = translations[currentLang];
+    const targetLang = currentLang === 'zh' ? 'zh' : 'en';
+    
+    const tryFetch = async (artistName, trackName) => {
+        const url = `https://lrclib.net/api/get?artist_name=${encodeURIComponent(artistName)}&track_name=${encodeURIComponent(trackName)}`;
         console.log("Trying:", url);
 
         const proxy = `https://api.allorigins.win/get?url=${encodeURIComponent(url)}`;
@@ -3897,24 +3990,23 @@ async function fetchLyricsWithTranslation(title, artist) {
 
     const meta = document.getElementById("lyricsMeta");
     const textEl = document.getElementById("lyricsText");
-    const t = translations[currentLang];
 
     lyricsState = { status: "loading", artist, title };
     meta.textContent = t.searching;
     textEl.textContent = t.searching;
 
     try {
-        // ✅ Try full name first
+        // Try full name first
         let json = await tryFetch(artist, title);
 
-        // ✅ If no lyrics found, try CJK-only artist
+        // If no lyrics found, try CJK-only artist
         if (!json.syncedLyrics && !json.plainLyrics) {
             const cjkOnlyArtist = artist.replace(/[\u0020A-Za-z]+/g, "").trim();
             if (cjkOnlyArtist && cjkOnlyArtist !== artist) {
                 console.log("Retrying with CJK only:", cjkOnlyArtist);
                 json = await tryFetch(cjkOnlyArtist, title);
                 if (json.syncedLyrics || json.plainLyrics) {
-                    artist = cjkOnlyArtist; // ✅ Update to working version
+                    artist = cjkOnlyArtist; // Update to working version
                 }
             }
         }
@@ -3923,45 +4015,43 @@ async function fetchLyricsWithTranslation(title, artist) {
         if (!lyrics) throw new Error("No lyrics");
 
         const isLrc = /^\s*\[\d{1,2}:\d{2}/m.test(lyrics);
-        const targetLang = currentLang === 'zh' ? 'zh' : 'en';
         
         if (isLrc) {
             const parsed = parseLrc(lyrics);
             lyricsData = { isLrc: true, lrcLines: parsed };
-            
-            // Detect source language
-            const sourceLang = await detectLanguage(parsed.map(l => l.text).join(' '));
             
             // Translate if enabled
             if (translationEnabled) {
                 const translateStatus = currentLang === 'zh' ? '正在翻译...' : 'Translating...';
                 meta.textContent = `${t.lyricsSyncedFound} ${artist} – ${title} (${translateStatus})`;
                 
-                // Check if we need English as intermediate
-                let translatedLines;
-                if (sourceLang === 'ja' && targetLang === 'zh') {
-                    // Japanese to Chinese via English
-                    const englishLines = await translateLyricsLines(parsed, 'en');
-                    translatedLines = await Promise.all(
-                        englishLines.map(async (line, i) => {
-                            if (line === parsed[i].text) return line; // No translation
-                            return await translateLyrics(line, 'en', 'zh');
-                        })
-                    );
+                // Use cached translations if available
+                const cacheKey = `${title}-${artist}-${targetLang}`;
+                if (translationCache[cacheKey] && translationCache[cacheKey].translation) {
+                    console.log("Using cached translation");
+                    translatedLyrics = translationCache[cacheKey].translation;
                 } else {
-                    // Direct translation
-                    translatedLines = await translateLyricsLines(parsed, targetLang);
+                    // Fetch new translation
+                    const sourceLang = await detectLanguage(parsed.map(l => l.text).join(' '));
+                    const translatedLines = await translateLyricsLines(parsed, targetLang);
+                    translatedLyrics = translatedLines;
+                    
+                    // Cache the translation
+                    translationCache[cacheKey] = {
+                        translation: translatedLines,
+                        timestamp: Date.now()
+                    };
+                    localStorage.setItem('lyricsTranslationCache', JSON.stringify(translationCache));
                 }
                 
-                translatedLyrics = translatedLines;
-                
                 // Check if translation actually happened
-                const hasTranslation = translatedLines.some((line, i) => line !== parsed[i].text);
+                const hasTranslation = translatedLyrics && 
+                    translatedLyrics.some((line, i) => line !== parsed[i].text);
                 const translationNote = hasTranslation ? 
                     (currentLang === 'zh' ? '(已翻译)' : '(Translated)') : 
                     (currentLang === 'zh' ? '(翻译不可用)' : '(Translation unavailable)');
                 
-                renderLrcLinesWithTranslation(parsed, translatedLines);
+                renderLrcLinesWithTranslation(parsed, translatedLyrics);
                 meta.textContent = `${t.lyricsSyncedFound} ${artist} – ${title} ${translationNote}`;
             } else {
                 renderLrcLines(parsed);
@@ -3976,28 +4066,42 @@ async function fetchLyricsWithTranslation(title, artist) {
                 const translateStatus = currentLang === 'zh' ? '正在翻译...' : 'Translating...';
                 meta.textContent = `${t.lyricsPlainFound} ${artist} – ${title} (${translateStatus})`;
                 
-                const sourceLang = await detectLanguage(lyrics);
-                let translated;
-                
-                // Check if we need English as intermediate
-                if (sourceLang === 'ja' && targetLang === 'zh') {
-                    // Japanese to Chinese via English
-                    const englishTranslation = await translateLyrics(lyrics, sourceLang, 'en');
-                    translated = await translateLyrics(englishTranslation, 'en', targetLang);
+                // Use cached translations if available
+                const cacheKey = `${title}-${artist}-${targetLang}-plain`;
+                if (translationCache[cacheKey] && translationCache[cacheKey].translation) {
+                    console.log("Using cached plain translation");
+                    translatedLyrics = translationCache[cacheKey].translation;
                 } else {
-                    // Direct translation
-                    translated = await translateLyrics(lyrics, sourceLang, targetLang);
+                    // Fetch new translation
+                    const sourceLang = await detectLanguage(lyrics);
+                    let translated;
+                    
+                    if (sourceLang === 'ja' && targetLang === 'zh') {
+                        // Japanese to Chinese via English
+                        const englishTranslation = await translateLyrics(lyrics, sourceLang, 'en');
+                        translated = await translateLyrics(englishTranslation, 'en', targetLang);
+                    } else {
+                        // Direct translation
+                        translated = await translateLyrics(lyrics, sourceLang, targetLang);
+                    }
+                    
+                    translatedLyrics = translated;
+                    
+                    // Cache the translation
+                    translationCache[cacheKey] = {
+                        translation: translated,
+                        timestamp: Date.now()
+                    };
+                    localStorage.setItem('lyricsTranslationCache', JSON.stringify(translationCache));
                 }
                 
-                translatedLyrics = translated;
-                
                 // Check if translation actually happened
-                const hasTranslation = translated !== lyrics;
+                const hasTranslation = translatedLyrics && translatedLyrics !== lyrics;
                 const translationNote = hasTranslation ? 
                     (currentLang === 'zh' ? '(已翻译)' : '(Translated)') : 
                     (currentLang === 'zh' ? '(翻译不可用)' : '(Translation unavailable)');
                 
-                renderPlainLyricsWithTranslation(lyrics, translated);
+                renderPlainLyricsWithTranslation(lyrics, translatedLyrics);
                 meta.textContent = `${t.lyricsPlainFound} ${artist} – ${title} ${translationNote}`;
             } else {
                 const lines = lyrics.split(/\r?\n/).filter(l => l.trim().length > 0);
