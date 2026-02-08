@@ -3512,46 +3512,168 @@ async function translateLyrics(text, sourceLang = 'auto', targetLang = currentLa
     
     // Don't translate if target language is same as source
     if ((sourceLang === 'en' && targetLang === 'en') || 
-        (sourceLang === 'zh' && targetLang === 'zh')) {
+        (sourceLang === 'zh' && targetLang === 'zh') ||
+        (sourceLang === 'ja' && targetLang === 'ja') ||
+        (sourceLang === 'ko' && targetLang === 'ko')) {
         return text;
     }
     
-    try {
-        // Using LibreTranslate (free, no API key required)
-        const response = await fetch('https://libretranslate.com/translate', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-                q: text,
-                source: sourceLang,
-                target: targetLang,
-                format: 'text'
-            })
-        });
+    // Don't translate if text is too short or empty
+    if (!text || text.trim().length < 2) {
+        return text;
+    }
+    
+    // Try multiple translation services as fallback
+    const translationServices = [
+        // Service 1: LibreTranslate (primary)
+        async (text, source, target) => {
+            try {
+                const response = await fetch('https://libretranslate.com/translate', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        q: text,
+                        source: source,
+                        target: target,
+                        format: 'text'
+                    })
+                });
+                
+                if (!response.ok) throw new Error('LibreTranslate failed');
+                
+                const data = await response.json();
+                return data.translatedText;
+            } catch (error) {
+                console.log('LibreTranslate failed, trying next service');
+                throw error;
+            }
+        },
         
-        if (!response.ok) {
-            console.warn('Translation API failed, trying fallback');
-            return text; // Return original text if translation fails
+        // Service 2: MyMemory (fallback 1)
+        async (text, source, target) => {
+            try {
+                // MyMemory API uses language codes like "en" for English, "zh-CN" for Chinese
+                const myMemorySource = source === 'zh' ? 'zh-CN' : source;
+                const myMemoryTarget = target === 'zh' ? 'zh-CN' : target;
+                
+                const response = await fetch(
+                    `https://api.mymemory.translated.net/get?q=${encodeURIComponent(text)}&langpair=${myMemorySource}|${myMemoryTarget}`
+                );
+                
+                if (!response.ok) throw new Error('MyMemory failed');
+                
+                const data = await response.json();
+                return data.responseData.translatedText;
+            } catch (error) {
+                console.log('MyMemory failed, trying next service');
+                throw error;
+            }
+        },
+        
+        // Service 3: Simple dictionary-based fallback for common phrases
+        async (text, source, target) => {
+            try {
+                // Only attempt if text is short (common phrases)
+                if (text.length > 100) throw new Error('Text too long for simple translation');
+                
+                const commonTranslations = {
+                    'en-zh': {
+                        'love': '爱',
+                        'you': '你',
+                        'me': '我',
+                        'hello': '你好',
+                        'thank you': '谢谢',
+                        'goodbye': '再见',
+                        'music': '音乐',
+                        'song': '歌曲',
+                        'heart': '心'
+                    },
+                    'zh-en': {
+                        '爱': 'love',
+                        '你': 'you',
+                        '我': 'me',
+                        '你好': 'hello',
+                        '谢谢': 'thank you',
+                        '再见': 'goodbye',
+                        '音乐': 'music',
+                        '歌曲': 'song',
+                        '心': 'heart'
+                    }
+                };
+                
+                const translationKey = `${source}-${target}`;
+                const dictionary = commonTranslations[translationKey];
+                
+                if (!dictionary) throw new Error('No dictionary for this language pair');
+                
+                // Try to find and replace common words
+                let translated = text;
+                for (const [word, translation] of Object.entries(dictionary)) {
+                    const regex = new RegExp(`\\b${word}\\b`, 'gi');
+                    translated = translated.replace(regex, translation);
+                }
+                
+                // If nothing was translated, throw error
+                if (translated === text) throw new Error('No translations found in dictionary');
+                
+                return translated;
+            } catch (error) {
+                console.log('Simple dictionary failed');
+                throw error;
+            }
         }
-        
-        const data = await response.json();
-        const translatedText = data.translatedText || text;
-        
-        // Cache the translation
-        translationCache[cacheKey] = {
-            translation: translatedText,
-            timestamp: Date.now()
-        };
+    ];
+    
+    let lastError = null;
+    
+    // Try each service in order
+    for (let i = 0; i < translationServices.length; i++) {
+        try {
+            const translatedText = await translationServices[i](text, sourceLang, targetLang);
+            
+            // Validate that we got a translation
+            if (translatedText && translatedText !== text) {
+                // Cache the translation
+                translationCache[cacheKey] = {
+                    translation: translatedText,
+                    timestamp: Date.now()
+                };
+                localStorage.setItem('lyricsTranslationCache', JSON.stringify(translationCache));
+                
+                console.log(`Translation successful with service ${i + 1}`);
+                return translatedText;
+            }
+        } catch (error) {
+            lastError = error;
+            console.log(`Translation service ${i + 1} failed:`, error.message);
+        }
+    }
+    
+    // If all services fail, return original text with a note
+    console.warn('All translation services failed, returning original text');
+    return text;
+}
+
+function clearExpiredTranslationCache() {
+    let hasChanges = false;
+    const now = Date.now();
+    
+    for (const key in translationCache) {
+        if (now - translationCache[key].timestamp > TRANSLATION_CACHE_EXPIRY) {
+            delete translationCache[key];
+            hasChanges = true;
+        }
+    }
+    
+    if (hasChanges) {
         localStorage.setItem('lyricsTranslationCache', JSON.stringify(translationCache));
-        
-        return translatedText;
-    } catch (error) {
-        console.warn('Translation error:', error);
-        return text; // Return original text on error
     }
 }
+
+// Call this on startup
+clearExpiredTranslationCache();
 
 async function detectLanguage(text) {
     // Simple language detection based on character analysis
@@ -3732,32 +3854,48 @@ async function fetchLyricsWithTranslation(title, artist) {
             
             // Translate if enabled
             if (translationEnabled) {
-                meta.textContent = `${t.lyricsSyncedFound} ${artist} – ${title} ${targetLang === 'zh' ? '(正在翻译...)' : '(Translating...)'}`;
+                const translateStatus = currentLang === 'zh' ? '正在翻译...' : 'Translating...';
+                meta.textContent = `${t.lyricsSyncedFound} ${artist} – ${title} (${translateStatus})`;
                 const translatedLines = await translateLyricsLines(parsed, targetLang);
                 translatedLyrics = translatedLines;
+                
+                // Check if translation actually happened
+                const hasTranslation = translatedLines.some((line, i) => line !== parsed[i].text);
+                const translationNote = hasTranslation ? 
+                    (currentLang === 'zh' ? '(已翻译)' : '(Translated)') : 
+                    (currentLang === 'zh' ? '(翻译不可用)' : '(Translation unavailable)');
+                
                 renderLrcLinesWithTranslation(parsed, translatedLines);
+                meta.textContent = `${t.lyricsSyncedFound} ${artist} – ${title} ${translationNote}`;
             } else {
                 renderLrcLines(parsed);
+                meta.textContent = `${t.lyricsSyncedFound} ${artist} – ${title}`;
             }
-            
-            meta.textContent = `${t.lyricsSyncedFound} ${artist} – ${title}`;
             lyricsState.status = "synced";
         } else {
             lyricsData = { isLrc: false, plain: lyrics };
             
             // Translate if enabled
             if (translationEnabled) {
-                meta.textContent = `${t.lyricsPlainFound} ${artist} – ${title} ${targetLang === 'zh' ? '(正在翻译...)' : '(Translating...)'}`;
+                const translateStatus = currentLang === 'zh' ? '正在翻译...' : 'Translating...';
+                meta.textContent = `${t.lyricsPlainFound} ${artist} – ${title} (${translateStatus})`;
                 const sourceLang = await detectLanguage(lyrics);
                 const translated = await translateLyrics(lyrics, sourceLang, targetLang);
                 translatedLyrics = translated;
+                
+                // Check if translation actually happened
+                const hasTranslation = translated !== lyrics;
+                const translationNote = hasTranslation ? 
+                    (currentLang === 'zh' ? '(已翻译)' : '(Translated)') : 
+                    (currentLang === 'zh' ? '(翻译不可用)' : '(Translation unavailable)');
+                
                 renderPlainLyricsWithTranslation(lyrics, translated);
+                meta.textContent = `${t.lyricsPlainFound} ${artist} – ${title} ${translationNote}`;
             } else {
                 const lines = lyrics.split(/\r?\n/).filter(l => l.trim().length > 0);
                 textEl.innerHTML = lines.map(line => `<div class="plain-line">${line}</div>`).join("");
+                meta.textContent = `${t.lyricsPlainFound} ${artist} – ${title}`;
             }
-            
-            meta.textContent = `${t.lyricsPlainFound} ${artist} – ${title}`;
             lyricsState.status = "plain";
         }
     } catch (e) {
