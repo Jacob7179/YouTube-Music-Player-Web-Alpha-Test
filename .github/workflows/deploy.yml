@@ -1,0 +1,76 @@
+# Deploy to GitHub Pages with API key injection
+name: Deploy YouTube Music Player to Pages
+
+on:
+  # Runs on pushes targeting the default branch
+  push:
+    branches: ["main"]
+
+  # Allows you to run this workflow manually from the Actions tab
+  workflow_dispatch:
+
+# Sets permissions of the GITHUB_TOKEN to allow deployment to GitHub Pages
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# Allow only one concurrent deployment, skipping runs queued between the run in-progress and latest queued.
+# However, do NOT cancel in-progress runs as we want to allow these production deployments to complete.
+concurrency:
+  group: "pages"
+  cancel-in-progress: false
+
+jobs:
+  # Build and deploy job
+  deploy:
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Replace API key in script.js
+        run: |
+          echo "--- Debugging API Key Injection ---"
+          echo "Checking for YOUTUBE_API_KEY secret..."
+          if [ -z "${{ secrets.YOUTUBE_API_KEY }}" ]; then
+            echo "⚠️ Warning: YOUTUBE_API_KEY secret not found in repository secrets. YouTube search will not work."
+            echo "Please ensure it is added to Settings -> Secrets and variables -> Actions."
+            # Exit with success if API key is not critical for basic deployment, but warn
+            # For now, we'll let it proceed but the app will show the 'not configured' message.
+          else
+            echo "✅ YOUTUBE_API_KEY secret found."
+            echo "Content of script.js BEFORE replacement:"
+            cat script.js | grep "YOUTUBE_API_KEY"
+
+            API_KEY="${{ secrets.YOUTUBE_API_KEY }}"
+            # Use perl for robust replacement and quote API_KEY for special characters
+            perl -pi -e "s|YOUR_YOUTUBE_API_KEY|\Q$API_KEY\E|g" script.js
+            
+            echo "Content of script.js AFTER replacement:"
+            cat script.js | grep "YOUTUBE_API_KEY"
+
+            if grep -q "YOUR_YOUTUBE_API_KEY" script.js; then
+              echo "❌ Error: API key placeholder 'YOUR_YOUTUBE_API_KEY' is still present in script.js after replacement attempt."
+              exit 1
+            else
+              echo "✅ API key replacement verified: Placeholder successfully replaced."
+            fi
+          fi
+          echo "-------------------------------------"
+
+      - name: Setup Pages
+        uses: actions/configure-pages@v5
+
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          # Upload entire repository
+          path: '.'
+
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
