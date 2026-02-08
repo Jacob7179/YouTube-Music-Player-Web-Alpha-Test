@@ -4047,7 +4047,7 @@ document.getElementById("translationToggle")?.addEventListener("change", functio
 });
 
 // Load translation setting on startup
-translationEnabled = JSON.parse(localStorage.getItem("translationEnabled") || "true");
+translationEnabled = JSON.parse(localStorage.getItem("translationEnabled") || "false");
 if (document.getElementById("translationToggle")) {
     document.getElementById("translationToggle").checked = translationEnabled;
 }
