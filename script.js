@@ -22,9 +22,11 @@ let searchTimeout;
 // You can change this if you find a more reliable proxy.
 // Alternative CORS proxies (uncomment one):
 // Example: https://corsproxy.io/?
-const CORS_PROXY_URL = 'https://corsproxy.io/?';
-// const CORS_PROXY_URL = 'https://api.codetabs.com/v1/proxy?quest=';
+// const CORS_PROXY_URL = 'https://corsproxy.io/?'; // Free usage is limited
+const CORS_PROXY_URL = 'https://api.codetabs.com/v1/proxy?quest=';
 // const CORS_PROXY_URL = 'https://thingproxy.freeboard.io/fetch/';
+// https://api.allorigins.win/
+// https://cors-anywhere.herokuapp.com/
 
 let playlist = []; // Array to store playlist data
 
