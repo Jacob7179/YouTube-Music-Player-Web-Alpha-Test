@@ -25,8 +25,8 @@ let searchTimeout;
 // const CORS_PROXY_URL = 'https://corsproxy.io/?'; // Free usage is limited
 const CORS_PROXY_URL = 'https://api.codetabs.com/v1/proxy?quest=';
 // const CORS_PROXY_URL = 'https://thingproxy.freeboard.io/fetch/';
-// https://api.allorigins.win/
-// https://cors-anywhere.herokuapp.com/
+// const CORS_PROXY_URL = 'https://api.allorigins.win/'; // Blocked
+// const CORS_PROXY_URL = 'https://cors-anywhere.herokuapp.com/'; // Requires authorization
 
 let playlist = []; // Array to store playlist data
 
