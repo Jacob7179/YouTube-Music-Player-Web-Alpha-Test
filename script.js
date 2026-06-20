@@ -55,10 +55,11 @@ let searchTimeout;
 // CORS Proxy URL - Used to bypass CORS restrictions for YouTube API calls
 // You can change this if you find a more reliable proxy.
 const CORS_PROXIES = [
-    'https://api.allorigins.win/raw?url=',
-    'https://thingproxy.freeboard.io/fetch/',
+    'https://cors-proxy.jacobng9022.workers.dev/?url=', // Custom proxy (Cloudflare Worker)
     'https://corsproxy.io/?',
-    'https://api.codetabs.com/v1/proxy?quest='
+    'https://api.codetabs.com/v1/proxy?quest=',
+    'https://api.allorigins.win/raw?url=',
+    'https://thingproxy.freeboard.io/fetch/'
 ];
 // const CORS_PROXY_URL = 'https://cors-anywhere.herokuapp.com/'; // Requires authorization
 
