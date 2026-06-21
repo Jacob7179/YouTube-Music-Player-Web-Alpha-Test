@@ -87,24 +87,6 @@ function cleanSongTitle(title, author) {
     cleaned = cleaned.replace(new RegExp(`^${escapedAuthor}\\s*[-–—]\\s*`), '');
     // Remove " - Author" at end
     cleaned = cleaned.replace(new RegExp(`\\s*[-–—]\\s*${escapedAuthor}$`), '');
-    // Remove " by Author" at end (case-insensitive)
-    cleaned = cleaned.replace(new RegExp(`\\s*[bB]y\\s*${escapedAuthor}$`), '');
-
-    // Remove " - Topic" (often appended)
-    cleaned = cleaned.replace(/\s*[-–—]\s*Topic$/, '');
-
-    // Remove common YouTube metadata tags (case-insensitive)
-    cleaned = cleaned.replace(/\s*[\[\(]Official\s*(Music\s*)?Video[\]\)]/gi, '');
-    cleaned = cleaned.replace(/\s*[\[\(]MV[\]\)]/gi, '');
-    cleaned = cleaned.replace(/\s*[\[\(]Official\s*Audio[\]\)]/gi, '');
-    cleaned = cleaned.replace(/\s*[\[\(]Lyrics?[\]\)]/gi, '');
-    cleaned = cleaned.replace(/\s*[\[\(]4K[\]\)]/gi, '');
-    cleaned = cleaned.replace(/\s*[\[\(]HD[\]\)]/gi, '');
-
-    // Remove any trailing dashes or spaces
-    cleaned = cleaned.replace(/^\s*[-–—]\s*/, '');
-    cleaned = cleaned.replace(/\s*[-–—]\s*$/, '');
-    cleaned = cleaned.trim();
 
     return cleaned;
 }
