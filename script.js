@@ -75,6 +75,40 @@ const ICON_PREVIOUS = '<i class=\'bx bx-skip-previous\' ></i>';
 const ICON_NEXT = '<i class=\'bx bx-skip-next\' ></i>';
 const ICON_REPEAT = '<i class=\'bx bx-repeat\' ></i>';
 
+function cleanSongTitle(title, author) {
+    if (!title) return '';
+    let cleaned = title.trim();
+    if (!author) return cleaned;
+
+    // Escape special regex characters in author
+    const escapedAuthor = author.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+
+    // Remove "Author - " at start
+    cleaned = cleaned.replace(new RegExp(`^${escapedAuthor}\\s*[-–—]\\s*`), '');
+    // Remove " - Author" at end
+    cleaned = cleaned.replace(new RegExp(`\\s*[-–—]\\s*${escapedAuthor}$`), '');
+    // Remove " by Author" at end (case-insensitive)
+    cleaned = cleaned.replace(new RegExp(`\\s*[bB]y\\s*${escapedAuthor}$`), '');
+
+    // Remove " - Topic" (often appended)
+    cleaned = cleaned.replace(/\s*[-–—]\s*Topic$/, '');
+
+    // Remove common YouTube metadata tags (case-insensitive)
+    cleaned = cleaned.replace(/\s*[\[\(]Official\s*(Music\s*)?Video[\]\)]/gi, '');
+    cleaned = cleaned.replace(/\s*[\[\(]MV[\]\)]/gi, '');
+    cleaned = cleaned.replace(/\s*[\[\(]Official\s*Audio[\]\)]/gi, '');
+    cleaned = cleaned.replace(/\s*[\[\(]Lyrics?[\]\)]/gi, '');
+    cleaned = cleaned.replace(/\s*[\[\(]4K[\]\)]/gi, '');
+    cleaned = cleaned.replace(/\s*[\[\(]HD[\]\)]/gi, '');
+
+    // Remove any trailing dashes or spaces
+    cleaned = cleaned.replace(/^\s*[-–—]\s*/, '');
+    cleaned = cleaned.replace(/\s*[-–—]\s*$/, '');
+    cleaned = cleaned.trim();
+
+    return cleaned;
+}
+
 // Add toggle functionality for song list/lyrics
 document.addEventListener('DOMContentLoaded', function() {
     const showSongListBtn = document.getElementById('showSongListBtn');
@@ -246,12 +280,7 @@ function renderPlaylist(songsToRender) {
         const songNameSpan = document.createElement('span');
         songNameSpan.classList.add('song-name');
         
-        // Clean the song name - remove author name if it's included
-        let cleanSongName = song.songName;
-        cleanSongName = cleanSongName.replace(new RegExp(`^${song.authorName}\\s*-\\s*`), '');
-        cleanSongName = cleanSongName.replace(new RegExp(`\\s*-\\s*${song.authorName}$`), '');
-        cleanSongName = cleanSongName.replace(new RegExp(`\\s*by\\s*${song.authorName}$`, 'i'), '');
-        
+        const cleanSongName = cleanSongTitle(song.songName, song.authorName);
         songNameSpan.textContent = cleanSongName;
 
         // Column 3: Author Name - Separate column
@@ -1222,20 +1251,21 @@ function loadNewVideo(videoId, albumArtUrl, songObject = null) {
     let authorNameElem = document.querySelector("#nowPlaying .author-name");
 
     if (songObject) {
-        let songName = songObject.songName;
+        let originalSongName = songObject.songName;
         let authorName = songObject.authorName;
+        let cleanSongName = cleanSongTitle(originalSongName, authorName);
 
-        if (songName !== lastSong) {  // Only animate if song name changes
+        if (cleanSongName !== lastSong) {
             songTitleElem.style.transition = "opacity 0.5s ease-in-out";
             songTitleElem.style.opacity = "0";
             setTimeout(() => {
-                updateSongTitle(songName);
+                updateSongTitle(cleanSongName);
                 songTitleElem.style.opacity = "1";
             }, 500);
-            lastSong = songName;
+            lastSong = cleanSongName;
         }
         
-        if (authorName !== lastAuthor) { // Only animate if author name changes
+        if (authorName !== lastAuthor) {
             authorNameElem.style.transition = "opacity 0.5s ease-in-out";
             authorNameElem.style.opacity = "0";
             setTimeout(() => {
@@ -1245,7 +1275,8 @@ function loadNewVideo(videoId, albumArtUrl, songObject = null) {
             lastAuthor = authorName;
         }
 
-        loadLyricsFor(songObject.songName, songObject.authorName);
+        // Load lyrics using original (uncleaned) title and author
+        loadLyricsFor(originalSongName, authorName);
     }
 
     clearTimeout(errorTimeout);
