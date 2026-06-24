@@ -5419,7 +5419,7 @@ function formatCacheAge(timestamp) {
 
 const SLIDE_DURATION = 5;   // seconds for original title to fully exit
 const PAUSE_DURATION = 2;   // seconds to pause after each cycle
-const GAP_FRACTION = 0.5;   // gap between titles = 20% of container width (capped)
+const GAP_FRACTION = 0.5;   // gap between titles = 50% of container width (capped)
 
 const titleContainer = document.querySelector("#nowPlaying .song-title");
 const titleInner = document.querySelector("#nowPlaying .song-title-inner");
