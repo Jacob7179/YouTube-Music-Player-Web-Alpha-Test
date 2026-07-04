@@ -2785,7 +2785,6 @@ function renderLrcLines(lines) {
                  data-index="${index}"
                  data-time="${line.time}"
                  data-formatted-time="${formattedTime}">
-                <span class="lrc-time">[${formattedTime}]</span>
                 <span class="lrc-text">${lyric}</span>
             </div>
         `;
@@ -4945,7 +4944,6 @@ function renderLrcLinesWithTranslation(lines, translatedLines = []) {
                      data-index="${index}"
                      data-time="${line.time}"
                      data-formatted-time="${formattedTime}">
-                    <span class="lrc-time">[${formattedTime}]</span>
                     <div class="lyrics-pair">
                         <div class="${className}" data-label="${label}">
                             ${text}
@@ -4969,7 +4967,6 @@ function renderLrcLinesWithTranslation(lines, translatedLines = []) {
                  data-index="${index}"
                  data-time="${line.time}"
                  data-formatted-time="${formattedTime}">
-                <span class="lrc-time">[${formattedTime}]</span>
 
                 <div class="lyrics-pair">
                     <div class="${firstClass}" data-label="${firstLabel}">
