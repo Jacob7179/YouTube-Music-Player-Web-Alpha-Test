@@ -2327,8 +2327,17 @@ document.addEventListener("DOMContentLoaded", function() {
     });
     
     // Close menu when clicking outside
-    document.addEventListener("click", function(event) {
-        if (!event.target.closest(".floating-settings") && settingsMenu.classList.contains("show")) {
+    document.addEventListener("click", function (event) {
+        const clickedInsideSettings = event.target.closest(".floating-settings");
+        const clickedInsideCacheManager = event.target.closest(
+            "#cacheManagerWindow, #cacheManagerOverlay, #cacheItemDetailsModal"
+        );
+
+        if (
+            !clickedInsideSettings &&
+            !clickedInsideCacheManager &&
+            settingsMenu.classList.contains("show")
+        ) {
             closeSettingsMenu();
         }
     });
@@ -3122,7 +3131,7 @@ const translations = {
     languageSet: "Language set to ${language}.",
     enabled: "enabled",
     disabled: "disabled",
-    chinese: "Chinese",
+    chinese: "Simplified Chinese",
     english: "English",
     addToPlaylist: "Add to Playlist",
     add: "Add",
@@ -3139,7 +3148,7 @@ const translations = {
     feature5: "Dark/Light mode",
     feature6: "Export/Import playlists",
     feature7: "Volume control & progress bar",
-    feature8: "Multi-language support (English/中文/日本語/한국어)",
+    feature8: "Multi-language support ({languages})",
     feature9: "Auto-play & repeat modes",
     originalProjectTitle: "Original Project",
     originalCreator: "Original creator",
@@ -3205,7 +3214,8 @@ const translations = {
     valid: "Valid",
     invalid: "Invalid",
     en: "English",
-    zh: "Chinese",
+    zh: "Simplified Chinese",
+    "zh-TW": "Traditional Chinese",
     ja: "Japanese",
     ko: "Korean",
   },
@@ -3291,7 +3301,7 @@ const translations = {
     languageSet: "语言设置为${language}。",
     enabled: "启用",
     disabled: "关闭",
-    chinese: "中文",
+    chinese: "简体中文",
     english: "英文",
     addToPlaylist: "添加到播放列表",
     add: "添加",
@@ -3308,7 +3318,7 @@ const translations = {
     feature5: "深色/浅色模式",
     feature6: "导入/导出播放列表",
     feature7: "音量控制与进度条",
-    feature8: "多语言支持 (英文/中文/日本語/한국어)",
+    feature8: "多语言支持（{languages}）",
     feature9: "自动播放和重复模式",
     originalProjectTitle: "原始项目",
     originalCreator: "原始创作者",
@@ -3374,7 +3384,8 @@ const translations = {
     valid: "有效",
     invalid: "无效",
     en: "英文",
-    zh: "中文",
+    zh: "简体中文",
+    "zh-TW": "繁體中文",
     ja: "日文",
     ko: "韩文",
   },
@@ -3478,7 +3489,7 @@ const translations = {
     feature5: "ダーク／ライトモード",
     feature6: "プレイリストのエクスポート／インポート",
     feature7: "音量調整と再生進行バー",
-    feature8: "多言語対応（English／中文／日本語／한국어）",
+    feature8: "多言語対応（{languages}）",
     feature9: "自動再生とリピートモード",
     originalProjectTitle: "オリジナルプロジェクト",
     originalCreator: "オリジナル制作者",
@@ -3543,6 +3554,7 @@ const translations = {
     invalid: "無効",
     en: "英語",
     zh: "中国語",
+    "zh-TW": "繁体字中国語",
     ja: "日本語",
     ko: "韓国語",
   },
@@ -3646,7 +3658,7 @@ const translations = {
     feature5: "다크/라이트 모드",
     feature6: "플레이리스트 내보내기/가져오기",
     feature7: "볼륨 조절 및 재생 진행 바",
-    feature8: "다국어 지원 (English/中文/日本語/한국어)",
+    feature8: "다국어 지원 ({languages})",
     feature9: "자동 재생 및 반복 모드",
     originalProjectTitle: "원본 프로젝트",
     originalCreator: "원작자",
@@ -3713,21 +3725,190 @@ const translations = {
     invalid: "유효하지 않음",
     en: "영어",
     zh: "중국어",
+    "zh-TW": "번체 중국어",
     ja: "일본어",
     ko: "한국어",
   }
 };
 
+function toTraditionalChineseText(text) {
+    if (typeof text !== "string") return text;
+
+    const map = {
+        "简": "簡", "体": "體", "汉": "漢", "语": "語", "译": "譯",
+        "显": "顯", "示": "示", "设": "設", "置": "置", "载": "載",
+        "导": "導", "入": "入", "出": "出", "数": "數", "据": "據",
+        "复": "複", "制": "製", "删": "刪", "除": "除", "项": "項",
+        "选": "選", "择": "擇", "启": "啟", "关": "關", "闭": "閉",
+        "开": "開", "发": "發", "现": "現", "结": "結", "果": "果",
+        "搜": "搜", "索": "索", "歌": "歌", "词": "詞", "单": "單",
+        "频": "頻", "乐": "樂", "览": "覽", "错": "錯", "误": "誤",
+        "请": "請", "连": "連", "网": "網", "络": "絡", "试": "試",
+        "间": "間", "钟": "鐘", "后": "後", "时": "時", "过": "過",
+        "画": "畫", "面": "面", "实": "實", "验": "驗", "稳": "穩",
+        "险": "險", "钥": "鑰", "读": "讀", "写": "寫", "欢": "歡",
+        "应": "應", "统": "統", "计": "計", "总": "總", "类": "類",
+        "临": "臨", "时": "時", "项": "項", "内": "內", "容": "容",
+        "变": "變", "声": "聲", "认": "認", "为": "為", "这": "這",
+        "个": "個", "会": "會", "无": "無", "与": "與", "专": "專",
+        "业": "業", "东": "東", "两": "兩", "严": "嚴", "丧": "喪",
+        "丰": "豐", "丽": "麗", "举": "舉", "么": "麼", "义": "義",
+        "乌": "烏", "乔": "喬", "习": "習", "乡": "鄉", "书": "書",
+        "买": "買", "乱": "亂", "争": "爭", "于": "於", "亏": "虧",
+        "云": "雲", "亚": "亞", "产": "產", "亩": "畝", "亲": "親",
+        "亿": "億", "仅": "僅", "从": "從", "仓": "倉", "仪": "儀",
+        "们": "們", "价": "價", "众": "眾", "优": "優", "传": "傳",
+        "伤": "傷", "伦": "倫", "伪": "偽", "伟": "偉", "侧": "側",
+        "侦": "偵", "侠": "俠", "侥": "僥", "侨": "僑", "侩": "儈",
+        "侪": "儕", "侬": "儂", "俣": "俁", "俦": "儔", "俨": "儼",
+        "俩": "倆", "俪": "儷", "俭": "儉", "债": "債", "倾": "傾",
+        "偬": "傯", "偻": "僂", "偿": "償", "傥": "儻", "储": "儲",
+        "儿": "兒", "兑": "兌", "党": "黨", "兰": "蘭", "兴": "興",
+        "养": "養", "兽": "獸", "内": "內", "冈": "岡", "册": "冊",
+        "写": "寫", "军": "軍", "农": "農", "冲": "衝", "决": "決",
+        "况": "況", "冻": "凍", "净": "淨", "凉": "涼", "减": "減",
+        "凑": "湊", "凤": "鳳", "凭": "憑", "凯": "凱", "击": "擊",
+        "凿": "鑿", "刍": "芻", "划": "劃", "刘": "劉", "则": "則",
+        "刚": "剛", "创": "創", "删": "刪", "别": "別", "刬": "剗",
+        "刭": "剄", "剂": "劑", "剐": "剮", "剑": "劍", "剧": "劇",
+        "劝": "勸", "办": "辦", "务": "務", "动": "動", "励": "勵",
+        "劲": "勁", "劳": "勞", "势": "勢", "勋": "勳", "匀": "勻",
+        "区": "區", "医": "醫", "华": "華", "协": "協", "单": "單",
+        "卖": "賣", "卢": "盧", "卫": "衛", "却": "卻", "厂": "廠",
+        "厅": "廳", "历": "歷", "压": "壓", "厌": "厭", "厉": "厲",
+        "厕": "廁", "厦": "廈", "厨": "廚", "厩": "廄", "县": "縣",
+        "叁": "參", "参": "參", "双": "雙", "变": "變", "叙": "敘",
+        "叠": "疊", "叶": "葉", "号": "號", "叹": "嘆", "叽": "嘰",
+        "吁": "籲", "后": "後", "听": "聽", "启": "啟", "吴": "吳",
+        "呐": "吶", "员": "員", "呗": "唄", "呙": "咼", "呛": "嗆",
+        "呜": "嗚", "咏": "詠", "咙": "嚨", "咛": "嚀", "咝": "噝",
+        "咤": "吒", "响": "響", "哑": "啞", "哒": "噠", "哓": "嘵",
+        "哔": "嗶", "哕": "噦", "哗": "嘩", "哙": "噲", "哜": "嚌",
+        "哝": "噥", "哟": "喲", "唤": "喚", "啧": "嘖", "啬": "嗇",
+        "啭": "囀", "啮": "嚙", "啰": "囉", "啸": "嘯", "喷": "噴",
+        "喽": "嘍", "喾": "嚳", "嗫": "囁", "嗳": "噯", "嘘": "噓",
+        "嘤": "嚶", "嘱": "囑", "噜": "嚕", "嚣": "囂", "团": "團",
+        "园": "園", "围": "圍", "图": "圖", "圆": "圓", "圣": "聖",
+        "场": "場", "坏": "壞", "块": "塊", "坚": "堅", "坛": "壇",
+        "坝": "壩", "坞": "塢", "坟": "墳", "坠": "墜", "垄": "壟",
+        "垅": "壟", "垆": "壚", "垒": "壘", "垦": "墾", "垩": "堊",
+        "垫": "墊", "垭": "埡", "垯": "墶", "垱": "壋", "垲": "塏",
+        "垴": "堖", "埘": "塒", "埙": "塤", "埚": "堝", "埯": "垵",
+        "堑": "塹", "堕": "墮", "墙": "牆", "壮": "壯", "声": "聲",
+        "壳": "殼", "壶": "壺", "处": "處", "备": "備", "复": "復",
+        "够": "夠", "头": "頭", "夹": "夾", "夺": "奪", "奁": "奩",
+        "奂": "奐", "奋": "奮", "奖": "獎", "奥": "奧", "妆": "妝",
+        "妇": "婦", "妈": "媽", "妩": "嫵", "妪": "嫗", "妫": "媯",
+        "姗": "姍", "姜": "薑", "娄": "婁", "娅": "婭", "娆": "嬈",
+        "娇": "嬌", "娈": "孌", "娱": "娛", "娲": "媧", "娴": "嫻",
+        "婳": "嫿", "婴": "嬰", "婵": "嬋", "婶": "嬸", "孙": "孫",
+        "学": "學", "孪": "孿", "宁": "寧", "宝": "寶", "实": "實",
+        "宠": "寵", "审": "審", "宪": "憲", "宫": "宮", "宽": "寬",
+        "宾": "賓", "寝": "寢", "对": "對", "寻": "尋", "导": "導",
+        "寿": "壽", "将": "將", "尔": "爾", "尘": "塵", "尝": "嘗",
+        "尧": "堯", "尴": "尷", "尸": "屍", "尽": "盡", "层": "層",
+        "屃": "屭", "屉": "屜", "届": "屆", "属": "屬", "屡": "屢",
+        "岁": "歲", "岂": "豈", "岖": "嶇", "岗": "崗", "岘": "峴",
+        "岙": "嶴", "岚": "嵐", "岛": "島", "岭": "嶺", "岳": "嶽",
+        "岽": "崬", "岿": "巋", "峃": "嶨", "峄": "嶧", "峡": "峽",
+        "峣": "嶢", "峤": "嶠", "峥": "崢", "峦": "巒", "崂": "嶗",
+        "崃": "崍", "崄": "嶮", "崭": "嶄", "嵘": "嶸", "嵚": "嶔",
+        "巅": "巔"
+    };
+
+    return text.replace(/[^\x00-\x7F]/g, char => map[char] || char);
+}
+
+function createTraditionalChineseTranslations(source) {
+    const result = {};
+
+    Object.entries(source).forEach(([key, value]) => {
+        result[key] = toTraditionalChineseText(value);
+    });
+
+    return result;
+}
+
+translations["zh-TW"] = {
+    ...createTraditionalChineseTranslations(translations.zh),
+
+    // Language names
+    en: "英文",
+    zh: "簡體中文",
+    "zh-TW": "繁體中文",
+    ja: "日文",
+    ko: "韓文",
+
+    // Better wording overrides
+    playerTitle: "YouTube 音樂播放器",
+    lyrics: "歌詞",
+    lyricsNoLoad: "尚未載入歌詞",
+    lyricsSyncedFound: "已找到同步歌詞：",
+    lyricsPlainFound: "已找到普通歌詞：",
+    lyricsNotFound: "未找到歌詞。",
+    lyricsError: "取得歌詞時發生錯誤。",
+    lyricsFetching: "正在載入歌詞...",
+    showPlaylist: "我的播放清單",
+    searchPlaylist: "搜尋你的播放清單...",
+    clearSearch: "清除搜尋",
+    searchPlaylistPlaceholder: "搜尋你的播放清單...",
+    songName: "歌曲名稱",
+    authorName: "作者名稱",
+    actionHeader: "操作",
+    youtubeSearchTitle: "搜尋 YouTube",
+    youtubeSearchPlaceholder: "在 YouTube 搜尋要加入的歌曲...",
+    youtubeSearchBtn: "搜尋",
+    searchResultsTitle: "搜尋結果：",
+    youtubeSearching: "正在搜尋 YouTube...",
+    youtubeSearchError: "無法搜尋 YouTube。請檢查網路連線後再試。",
+    settingsTitle: "設定",
+    exportPlaylist: "匯出播放清單與資料",
+    importPlaylist: "匯入播放清單與資料",
+    clearCache: "快取管理",
+    darkMode: "深色模式",
+    enableLyricsTranslation: "歌詞翻譯",
+    settingsAbout: "關於",
+    language: "語言",
+    languages: "語言：",
+    translation: "翻譯",
+    original: "原文",
+    close: "關閉",
+    search: "搜尋",
+    refresh: "重新整理",
+    raw: "原始資料",
+    feature8: "多語言支援（{languages}）",
+};
+
+// Add Traditional Chinese name to existing languages
+translations.en["zh-TW"] = "Traditional Chinese";
+translations.zh["zh-TW"] = "繁體中文";
+translations.ja["zh-TW"] = "繁体字中国語";
+translations.ko["zh-TW"] = "번체 중국어";
+
 let currentLang = localStorage.getItem("language");
 
-if (!currentLang) {
-  const browserLang = navigator.language.toLowerCase();
-    if (browserLang.includes("zh")) {
-    currentLang = "zh";
+if (currentLang === "zhTW" || currentLang === "zh-Hant") {
+    currentLang = "zh-TW";
+}
+
+if (!translations[currentLang]) {
+    const browserLang = navigator.language.toLowerCase();
+
+    if (
+        browserLang.includes("zh-tw") ||
+        browserLang.includes("zh-hk") ||
+        browserLang.includes("zh-mo") ||
+        browserLang.includes("hant")
+    ) {
+        currentLang = "zh-TW";
+    } else if (browserLang.includes("zh")) {
+        currentLang = "zh";
     } else if (browserLang.includes("ja")) {
-    currentLang = "ja";
+        currentLang = "ja";
+    } else if (browserLang.includes("ko")) {
+        currentLang = "ko";
     } else {
-    currentLang = "en";
+        currentLang = "en";
     }
 
     localStorage.setItem("language", currentLang);
@@ -3757,6 +3938,41 @@ function updateSupportedLanguages() {
     supportedLanguages.textContent = languages.length > 1
         ? `${languages.slice(0, -1).join(", ")} & ${languages.at(-1)}`
         : languages[0] || "";
+}
+
+function getFeatureLanguageSeparator(lang = currentLang) {
+    const separators = {
+        en: " / ",
+        zh: "/",
+        "zh-TW": "/",
+        ja: "／",
+        ko: " / "
+    };
+
+    return separators[lang] || " / ";
+}
+
+function getFeatureLanguageList() {
+    const languageSelect = document.getElementById("languageSelect");
+    const t = translations[currentLang] || translations.en;
+
+    if (!languageSelect) return "";
+
+    return Array.from(languageSelect.options)
+        .map(option => t[option.value] || option.textContent)
+        .join(getFeatureLanguageSeparator());
+}
+
+function updateFeature8() {
+    const feature8Element = document.querySelector('[data-translate="feature8"]');
+    const t = translations[currentLang] || translations.en;
+
+    if (!feature8Element || !t.feature8) return;
+
+    feature8Element.textContent = t.feature8.replace(
+        "{languages}",
+        getFeatureLanguageList()
+    );
 }
 
 function applyLanguage(lang = currentLang) {
@@ -4057,6 +4273,7 @@ function applyLanguage(lang = currentLang) {
     });
 
     refreshBuildDateLanguage();
+    updateFeature8();
 }
 
 document.getElementById("languageSelect")?.addEventListener("change", function () {
@@ -4199,6 +4416,7 @@ function formatBuildDateByLanguage(date, lang = currentLang) {
     const localeMap = {
         en: "en-US",
         zh: "zh-CN",
+        "zh-TW": "zh-TW",
         ja: "ja-JP",
         ko: "ko-KR"
     };
@@ -4314,7 +4532,7 @@ let showOriginalFirst = true; // true: original first, false: translated first
 const translationCache = JSON.parse(localStorage.getItem('lyricsTranslationCache') || '{}');
 const TRANSLATION_CACHE_EXPIRY = 86400000; // 24 hours in milliseconds
 function getLyricsTargetLanguage() {
-    return ["en", "zh", "ja", "ko"].includes(currentLang)
+    return ["en", "zh", "zh-TW", "ja", "ko"].includes(currentLang)
         ? currentLang
         : "en";
 }
@@ -4323,6 +4541,7 @@ function getLyricsLabels() {
     const labels = {
         en: { original: "Original", translation: "Translation" },
         zh: { original: "原文", translation: "译文" },
+        "zh-TW": { original: "原文", translation: "譯文" },
         ja: { original: "原文", translation: "翻訳" },
         ko: { original: "원문", translation: "번역" }
     };
@@ -4397,6 +4616,7 @@ async function translateSingleLine(text, sourceLang, targetLang, cacheKey = null
                 const libreCodes = {
                     'en': 'en',
                     'zh': 'zh',
+                    'zh-TW': 'zh-TW',
                     'ja': 'ja',
                     'ko': 'ko'
                 };
@@ -4443,13 +4663,15 @@ async function translateSingleLine(text, sourceLang, targetLang, cacheKey = null
         async (text, source, target) => {
             try {
                 // MyMemory API uses language codes like "en" for English, "zh-CN" for Chinese
-                const myMemorySource = source === 'zh' ? 'zh-CN' : 
-                                     source === 'ja' ? 'ja' :
-                                     source === 'ko' ? 'ko' : source;
-                
+                const myMemorySource = source === 'zh' ? 'zh-CN' :
+                                    source === 'zh-TW' ? 'zh-TW' :
+                                    source === 'ja' ? 'ja' :
+                                    source === 'ko' ? 'ko' : source;
+
                 const myMemoryTarget = target === 'zh' ? 'zh-CN' :
-                                     target === 'ja' ? 'ja' :
-                                     target === 'ko' ? 'ko' : target;
+                                    target === 'zh-TW' ? 'zh-TW' :
+                                    target === 'ja' ? 'ja' :
+                                    target === 'ko' ? 'ko' : target;
                 
                 const response = await fetch(
                     `https://api.mymemory.translated.net/get?q=${encodeURIComponent(text)}&langpair=${myMemorySource}|${myMemoryTarget}`
@@ -4471,6 +4693,7 @@ async function translateSingleLine(text, sourceLang, targetLang, cacheKey = null
                 const googleLangCodes = {
                     'en': 'en',
                     'zh': 'zh-CN',
+                    'zh-TW': 'zh-TW',
                     'ja': 'ja',
                     'ko': 'ko'
                 };
@@ -4547,14 +4770,19 @@ function clearExpiredTranslationCache() {
 clearExpiredTranslationCache();
 
 function detectLanguage(text = "") {
-    // Hiragana / Katakana is the reliable identifier for Japanese.
-    // Do NOT include Chinese Han characters here, because Japanese also uses Kanji.
     const japaneseKanaCount = (text.match(/[\u3040-\u309F\u30A0-\u30FF]/g) || []).length;
     const koreanCount = (text.match(/[\uAC00-\uD7AF]/g) || []).length;
+
+    // Common Traditional-only Chinese characters
+    const traditionalChineseCount = (
+        text.match(/[體語漢譯樂詞載顯設數據導開關閉啟後時過畫實驗穩險鑰讀寫應統計總類為這個會無與專業東兩嚴喪豐麗舉麼義烏喬習鄉書買亂爭於虧雲亞產親億僅從倉儀們價眾優傳傷偉側偵俠僑儲兒兌黨蘭興養獸內岡冊軍農衝決況凍淨涼減湊鳳憑凱擊劃劉則剛創刪別劑劍劇勸辦務動勵勁勞勢區醫華協單賣衛卻廠廳歷壓厭厲廁廈廚縣參雙變敘疊葉號嘆聽吳員響啞嘩喚嘖嘯噴團園圍圖圓聖場壞塊堅壇壩墳墜壘墾墊墮牆壯聲殼壺處備復夠頭夾奪奮獎奧妝婦媽嬌娛孫學寧寶審宮寬賓對尋將爾塵嘗盡層屬歲豈島嶺峽巒]/g) || []
+    ).length;
+
     const chineseHanCount = (text.match(/[\u4E00-\u9FFF]/g) || []).length;
 
     if (japaneseKanaCount > 0) return "ja";
     if (koreanCount > 0) return "ko";
+    if (traditionalChineseCount > 0) return "zh-TW";
     if (chineseHanCount > 0) return "zh";
 
     return "en";
@@ -4563,11 +4791,7 @@ function detectLanguage(text = "") {
 async function translateLyricsLines(lines, targetLang) {
     const sourceLang = await detectLanguage(lines.map(l => l.text).join(' '));
     
-    // Don't translate if source and target are the same
-    if ((sourceLang === 'en' && targetLang === 'en') || 
-        (sourceLang === 'zh' && targetLang === 'zh') ||
-        (sourceLang === 'ja' && targetLang === 'ja') ||
-        (sourceLang === 'ko' && targetLang === 'ko')) {
+    if (sourceLang === targetLang) {
         return lines.map(line => line.text);
     }
     
@@ -5249,9 +5473,21 @@ function initCacheManager() {
         openCacheManager();
     });
     
-    // Close cache manager
-    cacheManagerCloseBtn.addEventListener('click', closeCacheManager);
-    cacheManagerOverlay.addEventListener('click', closeCacheManager);
+    // Close cache manager without triggering the Settings outside-click handler
+    cacheManagerCloseBtn.addEventListener("click", function (e) {
+        e.stopPropagation();
+        closeCacheManager();
+    });
+
+    cacheManagerOverlay.addEventListener("click", function (e) {
+        e.stopPropagation();
+        closeCacheManager();
+    });
+
+    // Prevent clicks inside Cache Manager from closing Settings
+    cacheManagerWindow.addEventListener("click", function (e) {
+        e.stopPropagation();
+    });
     
     // Escape key
     document.addEventListener('keydown', function(event) {
