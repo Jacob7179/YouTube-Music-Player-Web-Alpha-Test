@@ -3139,7 +3139,7 @@ const translations = {
     feature5: "Dark/Light mode",
     feature6: "Export/Import playlists",
     feature7: "Volume control & progress bar",
-    feature8: "Multi-language support (English/中文)",
+    feature8: "Multi-language support (English/中文/日本語/한국어)",
     feature9: "Auto-play & repeat modes",
     originalProjectTitle: "Original Project",
     originalCreator: "Original creator",
@@ -3308,7 +3308,7 @@ const translations = {
     feature5: "深色/浅色模式",
     feature6: "导入/导出播放列表",
     feature7: "音量控制与进度条",
-    feature8: "多语言支持 (英文/中文)",
+    feature8: "多语言支持 (英文/中文/日本語/한국어)",
     feature9: "自动播放和重复模式",
     originalProjectTitle: "原始项目",
     originalCreator: "原始创作者",
@@ -3478,7 +3478,7 @@ const translations = {
     feature5: "ダーク／ライトモード",
     feature6: "プレイリストのエクスポート／インポート",
     feature7: "音量調整と再生進行バー",
-    feature8: "多言語対応（English／中文／日本語）",
+    feature8: "多言語対応（English／中文／日本語／한국어）",
     feature9: "自動再生とリピートモード",
     originalProjectTitle: "オリジナルプロジェクト",
     originalCreator: "オリジナル制作者",
@@ -3646,7 +3646,7 @@ const translations = {
     feature5: "다크/라이트 모드",
     feature6: "플레이리스트 내보내기/가져오기",
     feature7: "볼륨 조절 및 재생 진행 바",
-    feature8: "다국어 지원 (English/中文/한국어)",
+    feature8: "다국어 지원 (English/中文/日本語/한국어)",
     feature9: "자동 재생 및 반복 모드",
     originalProjectTitle: "원본 프로젝트",
     originalCreator: "원작자",
@@ -3739,11 +3739,6 @@ function updateLanguageButtons() {
 
     const t = translations[currentLang] || translations.en;
 
-    // Change dropdown option names using the current UI language
-    Array.from(languageSelect.options).forEach(option => {
-        option.textContent = t[option.value] || option.value;
-    });
-
     // Show the currently selected language
     languageSelect.value = currentLang;
 }
@@ -3756,10 +3751,12 @@ function updateSupportedLanguages() {
 
     const t = translations[currentLang] || translations.en;
 
-    // Read all languages that currently exist in the dropdown
-    supportedLanguages.textContent = Array.from(languageSelect.options)
-        .map(option => t[option.value] || option.value)
-        .join(" & ");
+    const languages = Array.from(languageSelect.options)
+        .map(option => t[option.value] || option.value);
+
+    supportedLanguages.textContent = languages.length > 1
+        ? `${languages.slice(0, -1).join(", ")} & ${languages.at(-1)}`
+        : languages[0] || "";
 }
 
 function applyLanguage(lang = currentLang) {
@@ -4058,6 +4055,8 @@ function applyLanguage(lang = currentLang) {
             el.textContent = t[key];
         }
     });
+
+    refreshBuildDateLanguage();
 }
 
 document.getElementById("languageSelect")?.addEventListener("change", function () {
@@ -4194,6 +4193,36 @@ function formatDateForLanguage(lang, dateString) {
 }
 
 // ========== AUTO BUILD DATE ==========
+function formatBuildDateByLanguage(date, lang = currentLang) {
+    if (!(date instanceof Date) || isNaN(date.getTime())) return "";
+
+    const localeMap = {
+        en: "en-US",
+        zh: "zh-CN",
+        ja: "ja-JP",
+        ko: "ko-KR"
+    };
+
+    const locale = localeMap[lang] || "en-US";
+
+    return new Intl.DateTimeFormat(locale, {
+        year: "numeric",
+        month: "long",
+        day: "numeric"
+    }).format(date);
+}
+
+function refreshBuildDateLanguage() {
+    const dateElement = document.getElementById("formattedDate");
+    if (!dateElement) return;
+
+    const isoDate = dateElement.getAttribute("data-build-date");
+    if (!isoDate) return;
+
+    const date = new Date(isoDate);
+    dateElement.textContent = formatBuildDateByLanguage(date, currentLang);
+}
+
 async function updateBuildDate() {
     const dateElement = document.getElementById('formattedDate');
     if (!dateElement) return;
@@ -4251,22 +4280,24 @@ async function updateBuildDate() {
         console.warn("Could not fetch file dates, using document.lastModified fallback", error);
     }
 
-    // Update the data attribute with the determined date
     if (latestDate) {
+        dateElement.setAttribute("data-build-date", latestDate.toISOString());
+
+        // Keep old format also, in case your other code still uses data-original-date
         const day = latestDate.getDate();
-        const month = latestDate.getMonth() + 1; // months are 0-indexed
+        const month = latestDate.getMonth() + 1;
         const year = latestDate.getFullYear();
-        const dateString = `${day}d ${month}m ${year}y`;
-        dateElement.setAttribute('data-original-date', dateString);
+        dateElement.setAttribute("data-original-date", `${day}d ${month}m ${year}y`);
     } else {
-        // Ultimate fallback (keep the existing attribute or set default)
-        if (!dateElement.getAttribute('data-original-date')) {
-            dateElement.setAttribute('data-original-date', '19d 6m 2026y');
+        if (!dateElement.getAttribute("data-build-date")) {
+            const fallbackDate = new Date(2026, 5, 19); // 19 June 2026
+            dateElement.setAttribute("data-build-date", fallbackDate.toISOString());
+            dateElement.setAttribute("data-original-date", "19d 6m 2026y");
         }
     }
 
-    // Re-apply current language formatting to update the displayed date
-    applyLanguage(currentLang);
+    // Update date text using current selected language
+    refreshBuildDateLanguage();
 }
 
 document.addEventListener('DOMContentLoaded', function() {
@@ -4282,8 +4313,24 @@ let showOriginalFirst = true; // true: original first, false: translated first
 // Cache for translations to minimize API calls
 const translationCache = JSON.parse(localStorage.getItem('lyricsTranslationCache') || '{}');
 const TRANSLATION_CACHE_EXPIRY = 86400000; // 24 hours in milliseconds
+function getLyricsTargetLanguage() {
+    return ["en", "zh", "ja", "ko"].includes(currentLang)
+        ? currentLang
+        : "en";
+}
 
-async function translateLyrics(text, sourceLang = 'auto', targetLang = currentLang === 'zh' ? 'zh' : 'en') {
+function getLyricsLabels() {
+    const labels = {
+        en: { original: "Original", translation: "Translation" },
+        zh: { original: "原文", translation: "译文" },
+        ja: { original: "原文", translation: "翻訳" },
+        ko: { original: "원문", translation: "번역" }
+    };
+
+    return labels[getLyricsTargetLanguage()] || labels.en;
+}
+
+async function translateLyrics(text, sourceLang = "auto", targetLang = getLyricsTargetLanguage()) {
     // Check cache first
     const cacheKey = `${sourceLang}-${targetLang}-${text.substring(0, 100)}`;
     const cached = translationCache[cacheKey];
@@ -4499,32 +4546,18 @@ function clearExpiredTranslationCache() {
 // Call this on startup
 clearExpiredTranslationCache();
 
-async function detectLanguage(text) {
-    // Simple language detection based on character analysis
-    const chinesePattern = /[\u4e00-\u9fff]/; // Chinese characters
-    const japanesePattern = /[\u3040-\u309f\u30a0-\u30ff\u4e00-\u9fff]/; // Japanese
-    const koreanPattern = /[\uac00-\ud7af]/; // Korean
-    
-    // Check character counts
-    let chineseCount = 0;
-    let japaneseCount = 0;
-    let koreanCount = 0;
-    let englishCount = 0;
-    
-    for (let char of text) {
-        if (chinesePattern.test(char)) chineseCount++;
-        if (japanesePattern.test(char)) japaneseCount++;
-        if (koreanPattern.test(char)) koreanCount++;
-        if (/[a-zA-Z]/.test(char)) englishCount++;
-    }
-    
-    // If there's a significant amount of CJK characters, use that language
-    if (chineseCount > japaneseCount && chineseCount > koreanCount) return 'zh';
-    if (japaneseCount > chineseCount && japaneseCount > koreanCount) return 'ja';
-    if (koreanCount > chineseCount && koreanCount > japaneseCount) return 'ko';
-    
-    // Fallback to English for Latin scripts or mixed content
-    return 'en';
+function detectLanguage(text = "") {
+    // Hiragana / Katakana is the reliable identifier for Japanese.
+    // Do NOT include Chinese Han characters here, because Japanese also uses Kanji.
+    const japaneseKanaCount = (text.match(/[\u3040-\u309F\u30A0-\u30FF]/g) || []).length;
+    const koreanCount = (text.match(/[\uAC00-\uD7AF]/g) || []).length;
+    const chineseHanCount = (text.match(/[\u4E00-\u9FFF]/g) || []).length;
+
+    if (japaneseKanaCount > 0) return "ja";
+    if (koreanCount > 0) return "ko";
+    if (chineseHanCount > 0) return "zh";
+
+    return "en";
 }
 
 async function translateLyricsLines(lines, targetLang) {
@@ -4597,92 +4630,98 @@ async function translateLyricsLines(lines, targetLang) {
     return translatedLines;
 }
 
-function renderLrcLinesWithTranslation(lines, translations = []) {
+function renderLrcLinesWithTranslation(lines, translatedLines = []) {
     const el = document.getElementById("lyricsText");
-    const targetLang = currentLang === 'zh' ? 'zh' : 'en';
-    
-    el.innerHTML = lines
-        .map((l, i) => {
-            const m = Math.floor(l.time / 60);
-            const s = Math.floor(l.time % 60);
-            const formattedTime = `${m}:${s < 10 ? "0" + s : s}`;
-            
-            // Check if this line has translation
-            const hasTranslation = translations[i] !== undefined && translations[i] !== null && 
-                                 translations[i] !== '' && translations[i] !== l.text;
-            
-            // Get the translation text for this specific line
-            const translationText = hasTranslation ? translations[i] : '';
-            
-            // Determine display order based on setting
-            const firstText = showOriginalFirst ? l.text : translationText;
-            const secondText = showOriginalFirst ? translationText : l.text;
-            const firstLabel = showOriginalFirst ? 
-                (targetLang === 'zh' ? '原文' : 'Original') : 
-                (targetLang === 'zh' ? '译文' : 'Translation');
-            const secondLabel = showOriginalFirst ? 
-                (targetLang === 'zh' ? '译文' : 'Translation') : 
-                (targetLang === 'zh' ? '原文' : 'Original');
-            
-            // Only show translation container if we actually have a translation for THIS line
-            const shouldShowTranslation = hasTranslation && translationText.trim().length > 0;
-            
-            return `
-                <div class="lrc-line" data-index="${i}" data-time="${l.time}" data-formatted-time="${formattedTime}">
-                    <span class="lrc-time">[${formattedTime}]</span>
-                    <div class="lyrics-pair">
-                        <div class="original-lyric" data-label="${firstLabel}">
-                            ${firstText || l.text || ' '}
-                        </div>
-                        ${shouldShowTranslation ? `
-                        <div class="translated-lyric" data-label="${secondLabel}">
-                            ${secondText}
-                        </div>
-                        ` : ''}
+    const labels = getLyricsLabels();
+
+    el.innerHTML = lines.map((line, index) => {
+        const minutes = Math.floor(line.time / 60);
+        const seconds = Math.floor(line.time % 60);
+        const formattedTime = `${minutes}:${seconds < 10 ? "0" + seconds : seconds}`;
+
+        const translation = translatedLines[index];
+        const hasTranslation =
+            typeof translation === "string" &&
+            translation.trim() !== "" &&
+            translation !== line.text;
+
+        // Do not show an empty translation area.
+        const firstIsOriginal = showOriginalFirst || !hasTranslation;
+
+        const firstText = firstIsOriginal ? line.text : translation;
+        const firstClass = firstIsOriginal ? "original-lyric" : "translated-lyric";
+        const firstLabel = firstIsOriginal ? labels.original : labels.translation;
+
+        const secondHtml = hasTranslation
+            ? `
+                <div class="${firstIsOriginal ? "translated-lyric" : "original-lyric"}"
+                     data-label="${firstIsOriginal ? labels.translation : labels.original}">
+                    ${firstIsOriginal ? translation : line.text}
+                </div>
+              `
+            : "";
+
+        return `
+            <div class="lrc-line"
+                 data-index="${index}"
+                 data-time="${line.time}"
+                 data-formatted-time="${formattedTime}">
+                <span class="lrc-time">[${formattedTime}]</span>
+
+                <div class="lyrics-pair">
+                    <div class="${firstClass}" data-label="${firstLabel}">
+                        ${firstText}
                     </div>
-                </div>`;
-        })
-        .join("");
+                    ${secondHtml}
+                </div>
+            </div>
+        `;
+    }).join("");
 }
 
-function renderPlainLyricsWithTranslation(plainText, translation = '') {
+function renderPlainLyricsWithTranslation(plainText, translatedText = "") {
     const el = document.getElementById("lyricsText");
-    const targetLang = currentLang === 'zh' ? 'zh' : 'en';
-    const hasTranslation = translation && translation !== plainText;
-    
-    const lines = plainText.split(/\r?\n/).filter(l => l.trim().length > 0);
-    const translatedLines = hasTranslation ? translation.split(/\r?\n/) : [];
-    
-    // Ensure we have the same number of lines
-    while (translatedLines.length < lines.length) {
-        translatedLines.push('');
-    }
-    
-    // Determine display order based on setting
-    const firstLabel = showOriginalFirst ? 
-        (targetLang === 'zh' ? '原文' : 'Original') : 
-        (targetLang === 'zh' ? '译文' : 'Translation');
-    const secondLabel = showOriginalFirst ? 
-        (targetLang === 'zh' ? '译文' : 'Translation') : 
-        (targetLang === 'zh' ? '原文' : 'Original');
-    
-    el.innerHTML = lines
-        .map((line, i) => {
-        const firstText = showOriginalFirst ? line : (translatedLines[i] || '');
-        const secondText = showOriginalFirst ? (translatedLines[i] || '') : line;
-        const hasTranslatedLine = translatedLines[i] && translatedLines[i].trim().length > 0;
-        
+    const labels = getLyricsLabels();
+
+    // Keep blank lines in both arrays so translation stays in the correct row.
+    const originalLines = plainText.split(/\r?\n/);
+    const translatedLines = translatedText
+        ? translatedText.split(/\r?\n/)
+        : [];
+
+    el.innerHTML = originalLines.map((line, index) => {
+        const translation = translatedLines[index] || "";
+
+        const hasTranslation =
+            translation.trim() !== "" &&
+            translation !== line;
+
+        const firstIsOriginal = showOriginalFirst || !hasTranslation;
+
+        const firstText = firstIsOriginal ? line : translation;
+        const firstClass = firstIsOriginal ? "original-lyric" : "translated-lyric";
+        const firstLabel = firstIsOriginal ? labels.original : labels.translation;
+
+        const secondHtml = hasTranslation
+            ? `
+                <div class="${firstIsOriginal ? "translated-lyric" : "original-lyric"}"
+                     data-label="${firstIsOriginal ? labels.translation : labels.original}">
+                    ${firstIsOriginal ? translation : line}
+                </div>
+              `
+            : "";
+
         return `
             <div class="plain-line">
-            <div class="lyrics-pair">
-                <div class="original-lyric" data-label="${firstLabel}">${firstText}</div>
-                ${hasTranslatedLine ? `
-                <div class="translated-lyric" data-label="${secondLabel}">${secondText}</div>
-                ` : ''}
+                <div class="lyrics-pair">
+                    <div class="${firstClass}" data-label="${firstLabel}">
+                        ${firstText || " "}
+                    </div>
+                    ${secondHtml}
+                </div>
             </div>
-            </div>`;
-        })
-        .join("");
+        `;
+    }).join("");
 }
 
 function initLyricsClickToSeek() {
@@ -4762,7 +4801,7 @@ async function fetchLyricsWithTranslation(title, artist) {
     const meta = document.getElementById("lyricsMeta");
     const textEl = document.getElementById("lyricsText");
     const t = translations[currentLang];
-    const targetLang = currentLang === 'zh' ? 'zh' : 'en';
+    const targetLang = getLyricsTargetLanguage();
 
     lyricsState = { status: "loading", artist, title };
 
@@ -4837,6 +4876,14 @@ async function fetchLyricsWithTranslation(title, artist) {
         const lyrics = json.syncedLyrics || json.plainLyrics;
         if (!lyrics) throw new Error("No lyrics");
 
+        const sourceLang = detectLanguage(lyrics);
+        const shouldTranslate = translationEnabled && sourceLang !== targetLang;
+
+        // Clear old translation from the previous song or previous language.
+        translatedLyrics = null;
+        showTranslatedView = false;
+        isTranslating = false;
+
         const isLrc = /^\s*\[\d{1,2}:\d{2}/m.test(lyrics);
         
         // Show normal lyrics first (immediately)
@@ -4849,7 +4896,7 @@ async function fetchLyricsWithTranslation(title, artist) {
         lyricsState.status = "synced";
         
         // Then translate in background if enabled
-        if (translationEnabled && !isTranslating) {
+        if (shouldTranslate && !isTranslating) {
             isTranslating = true;
             
             // Check for cached translation
