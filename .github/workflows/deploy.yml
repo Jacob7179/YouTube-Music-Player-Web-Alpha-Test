@@ -74,18 +74,25 @@ jobs:
           content = script_path.read_text(encoding="utf-8")
           placeholder_count = content.count(placeholder)
 
-          if placeholder_count != 1:
+          if placeholder_count == 0:
               raise SystemExit(
-                  "::error::Expected exactly one YOUR_YOUTUBE_API_KEY placeholder "
-                  f"in script.js, but found {placeholder_count}."
+                  "::error::YOUR_YOUTUBE_API_KEY placeholder was not found in script.js."
               )
 
-          script_path.write_text(
-              content.replace(placeholder, api_key, 1),
-              encoding="utf-8"
-          )
+          # Replace every placeholder in the temporary deployment copy.
+          updated_content = content.replace(placeholder, api_key)
 
-          print("::notice::YouTube API key injected into deployment artifact.")
+          if placeholder in updated_content:
+              raise SystemExit(
+                  "::error::API key placeholder still exists after replacement."
+              )
+
+          script_path.write_text(updated_content, encoding="utf-8")
+
+          print(
+              f"::notice::YouTube API key injected into {placeholder_count} location(s) "
+              "in the deployment artifact."
+          )
           PY
 
       - name: Configure GitHub Pages
