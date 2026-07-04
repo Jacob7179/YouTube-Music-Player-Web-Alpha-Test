@@ -3204,6 +3204,10 @@ const translations = {
     expired: "Expired",
     valid: "Valid",
     invalid: "Invalid",
+    en: "English",
+    zh: "Chinese",
+    ja: "Japanese",
+    ko: "Korean",
   },
   zh: {
     playerTitle: "YouTube 音乐播放器",
@@ -3369,6 +3373,348 @@ const translations = {
     expired: "已过期",
     valid: "有效",
     invalid: "无效",
+    en: "英文",
+    zh: "中文",
+    ja: "日文",
+    ko: "韩文",
+  },
+  ja: {
+    playerTitle: "YouTube Music Player",
+    autoPlay: "自動再生",
+    repeat: "リピート",
+    lyrics: "歌詞",
+    lyricsNoLoad: "歌詞が読み込まれていません",
+    lyricsSyncedFound: "同期歌詞が見つかりました：",
+    lyricsPlainFound: "歌詞が見つかりました：",
+    lyricsNotFound: "歌詞が見つかりません。",
+    lyricsError: "歌詞の取得中にエラーが発生しました。",
+    lyricsFetching: "歌詞を取得中...",
+    autoSyncOn: "自動同期：オン",
+    autoSyncOff: "自動同期：オフ",
+    refresh: "更新",
+    raw: "生データ",
+    showPlaylist: "マイプレイリスト",
+    searchPlaylist: "プレイリストを検索...",
+    clearSearch: "検索をクリア",
+    searchPlaylistPlaceholder: "プレイリストを検索...",
+    songName: "曲名",
+    authorName: "アーティスト名",
+    dragToReorder: "ドラッグして並べ替え",
+    numberHeader: "番号",
+    actionHeader: "操作",
+    songUnavailable: "この曲は利用できません。",
+    seconds: "秒後にスキップします",
+    youtubeSearchTitle: "YouTube を検索",
+    youtubeSearchPlaceholder: "追加する曲を YouTube で検索...",
+    youtubeSearchBtn: "検索",
+    searchResultsTitle: "検索結果：",
+    youtubeSearching: "YouTube を検索中...",
+    youtubeSearchError: "YouTube を検索できません。インターネット接続を確認して、もう一度お試しください。",
+    youtubeApiKeyError: "YouTube API キーが設定されていません。config.js が読み込まれており、キーが設定されていることを確認してください。",
+    removeSongTitle: "曲を削除",
+    settingsTitle: "設定",
+    searchYouTubeTitle: "YouTube を検索",
+    exportTitle: "プレイリストとデータをエクスポート",
+    importTitle: "プレイリストとデータをインポート",
+    exportPlaylist: "プレイリストとデータをエクスポート",
+    importPlaylist: "プレイリストとデータをインポート",
+    clearCache: "キャッシュ管理",
+    albumArtSpin: "アルバムアートを回転",
+    showLyrics: "歌詞",
+    darkMode: "ダークモード",
+    toggleLyricsTooltip: "歌詞の表示／非表示を切り替える",
+    goTop: "先頭へ戻る",
+    creatorTitle: "オリジナル制作者",
+    creatorDesc: "この YouTube Music Player プロジェクトのオリジナル制作者です。",
+    creatorBtn: "オリジナル制作者",
+    visitRepo: "リポジトリを表示",
+    maintainerTitle: "フォーク版メンテナー",
+    maintainerDesc: "機能が強化された<a href='https://github.com/Farwalker3/YouTube-Music-Player-Web' target='_blank'>このフォーク版</a>のメンテナーです。",
+    maintainerBtn: "フォーク版メンテナー",
+    experimentalWindowTitle: "実験的プロジェクト",
+    experimentalWindowWarning: "⚠ 警告：このプロジェクトは不安定または安全でない可能性があります。自己責任でご利用ください。",
+    readExcelTitle: "Excel ファイルの読み込み方法",
+    readApiKeyTitle: "API キーの読み込み方法",
+    viewBetaBtn: "ベータテスト版を表示",
+    viewAlphaBtn: "アルファテスト版を表示",
+    viewBetaTooltip: "ベータテスト版を表示",
+    viewAlphaTooltip: "アルファテスト版を表示",
+    attributionText: "オリジナルプロジェクト：",
+    attributionEnhanced: "機能強化版：",
+    attributionRepo: "オリジナルリポジトリ",
+    languageLabel: "言語",
+    songAlreadyExists: "この曲はすでにプレイリストにあります！",
+    songAdded: " をプレイリストに追加しました！",
+    importFileTypeError: "JSON データを含む JSON ファイルまたは TXT ファイルを選択してください。",
+    cacheCleared: "検索キャッシュを削除しました！次回の検索では新しい結果を取得します。",
+    exportError: "プレイリストのエクスポート中にエラーが発生しました。もう一度お試しください。",
+    importError: "プレイリストのインポート中にエラーが発生しました：",
+    fileReadError: "ファイルの読み込み中にエラーが発生しました。もう一度お試しください。",
+    noLyricsLoaded: "歌詞が読み込まれていません。",
+    clearCacheConfirm: "検索キャッシュを削除してもよろしいですか？保存されている検索結果がすべて削除されます。",
+    importConfirm: "${count} 曲をインポートしますか？現在のプレイリストは置き換えられます。",
+    importSuccess: "${count} 曲を正常にインポートしました！",
+    darkModeStatus: "ダークモードを${status}にしました。",
+    albumArtSpinStatus: "アルバムアートの回転を${status}にしました。",
+    lyricsPanelStatus: "歌詞パネルを${status}にしました。",
+    languageSet: "言語を${language}に設定しました。",
+    enabled: "有効",
+    disabled: "無効",
+    chinese: "中国語",
+    english: "英語",
+    japanese: "日本語",
+    addToPlaylist: "プレイリストに追加",
+    add: "追加",
+    invalidLink: "⚠ 無効な YouTube リンクです。",
+    duplicateSong: "⚠ この曲はすでにプレイリストにあります！",
+    addedSong: (title, author) => `✅ 「${title}」- ${author} をプレイリストに追加しました！`,
+    aboutTitle: "YouTube Music Player について",
+    aboutDescription: "YouTube を音楽ソースとして使用する、多機能なウェブベースの音楽プレーヤーです。お気に入りの音楽をすっきりとした直感的な画面で再生、管理、整理できます。",
+    featuresTitle: "機能",
+    feature1: "YouTube 音楽再生",
+    feature2: "ドラッグ＆ドロップによるプレイリスト管理",
+    feature3: "自動同期対応の歌詞表示",
+    feature4: "歌詞翻訳",
+    feature5: "ダーク／ライトモード",
+    feature6: "プレイリストのエクスポート／インポート",
+    feature7: "音量調整と再生進行バー",
+    feature8: "多言語対応（English／中文／日本語）",
+    feature9: "自動再生とリピートモード",
+    originalProjectTitle: "オリジナルプロジェクト",
+    originalCreator: "オリジナル制作者",
+    contributorsTitle: "貢献者",
+    forkMaintainer: "フォーク版メンテナー",
+    linksTitle: "リンク",
+    originalRepository: "オリジナルリポジトリ",
+    versionInfoTitle: "バージョン情報",
+    version: "バージョン：",
+    lastUpdated: "最終更新：",
+    languages: "対応言語：",
+    experimentalFeatures: "実験的機能",
+    settingsAboutTitle: "このプロジェクトについて",
+    settingsAbout: "概要",
+    albumArtDisplay: "アルバムアート表示：",
+    spin: "回転",
+    none: "なし",
+    video: "ビデオ",
+    youtubeApi403Error: "YouTube API エラー：403 - 割り当て上限を超えました。API キーが1日の利用上限に達しています。明日もう一度お試しいただくか、別の API キーを使用してください。",
+    translationStatus: "歌詞翻訳を${status}にしました。",
+    enableLyricsTranslation: "歌詞翻訳",
+    showOriginalFirstLabel: "原文を先に表示",
+    noResultsFound: "結果が見つかりません。",
+    searchCache: "検索キャッシュ",
+    lyricsCache: "歌詞キャッシュ",
+    translationCache: "翻訳キャッシュ",
+    unknown: "不明",
+    viewDetails: "詳細を表示",
+    delete: "削除",
+    noCacheItems: "キャッシュ項目が見つかりません",
+    totalItems: "合計項目数",
+    totalSize: "合計サイズ",
+    selectAll: "すべて選択",
+    clearSelected: "選択項目を削除",
+    clearAll: "すべてのキャッシュを削除",
+    cacheManagerTitle: "キャッシュ管理",
+    cacheItems: "キャッシュ項目",
+    cacheKey: "キャッシュキー",
+    cacheType: "種類",
+    cacheSize: "サイズ",
+    cacheAge: "経過時間",
+    actions: "操作",
+    confirmDeleteSelected: "選択した {count} 件の項目を削除しますか？",
+    confirmDeleteItem: "このキャッシュ項目を削除しますか？",
+    confirmClearAllCache: "すべてのキャッシュを削除してもよろしいですか？この操作は元に戻せません。",
+    noItemsSelected: "項目が選択されていません",
+    copiedToClipboard: "クリップボードにコピーしました！",
+    cacheItemDetails: "キャッシュの詳細",
+    cacheContent: "内容",
+    copyContent: "内容をコピー",
+    deleteItem: "項目を削除",
+    close: "閉じる",
+    search: "検索",
+    translation: "翻訳",
+    all: "すべて",
+    itemsSelected: "{count} 件選択中",
+    cacheStats: "キャッシュ統計",
+    expiresIn: "有効期限まで",
+    never: "なし",
+    expired: "期限切れ",
+    valid: "有効",
+    invalid: "無効",
+    en: "英語",
+    zh: "中国語",
+    ja: "日本語",
+    ko: "韓国語",
+  },
+  ko: {
+    playerTitle: "YouTube Music Player",
+    autoPlay: "자동 재생",
+    repeat: "반복",
+    lyrics: "가사",
+    lyricsNoLoad: "불러온 가사가 없습니다",
+    lyricsSyncedFound: "동기화된 가사를 찾았습니다:",
+    lyricsPlainFound: "가사를 찾았습니다:",
+    lyricsNotFound: "가사를 찾을 수 없습니다.",
+    lyricsError: "가사를 가져오는 중 오류가 발생했습니다.",
+    lyricsFetching: "가사를 불러오는 중...",
+    autoSyncOn: "자동 동기화: 켜짐",
+    autoSyncOff: "자동 동기화: 꺼짐",
+    refresh: "새로고침",
+    raw: "원본 데이터",
+    showPlaylist: "내 플레이리스트",
+    searchPlaylist: "플레이리스트 검색...",
+    clearSearch: "검색 지우기",
+    searchPlaylistPlaceholder: "플레이리스트 검색...",
+    songName: "곡명",
+    authorName: "아티스트명",
+    dragToReorder: "드래그하여 순서 변경",
+    numberHeader: "번호",
+    actionHeader: "작업",
+    songUnavailable: "이 곡은 사용할 수 없습니다. 다음 시간 후 건너뜁니다:",
+    seconds: "초",
+    youtubeSearchTitle: "YouTube 검색",
+    youtubeSearchPlaceholder: "추가할 노래를 YouTube에서 검색...",
+    youtubeSearchBtn: "검색",
+    searchResultsTitle: "검색 결과:",
+    youtubeSearching: "YouTube 검색 중...",
+    youtubeSearchError: "YouTube를 검색할 수 없습니다. 인터넷 연결을 확인한 후 다시 시도하세요.",
+    youtubeApiKeyError: "YouTube API 키가 설정되지 않았습니다. config.js가 로드되었고 키가 설정되어 있는지 확인하세요.",
+    removeSongTitle: "곡 삭제",
+    settingsTitle: "설정",
+    searchYouTubeTitle: "YouTube 검색",
+    exportTitle: "플레이리스트 및 데이터 내보내기",
+    importTitle: "플레이리스트 및 데이터 가져오기",
+    exportPlaylist: "플레이리스트 및 데이터 내보내기",
+    importPlaylist: "플레이리스트 및 데이터 가져오기",
+    clearCache: "캐시 관리자",
+    albumArtSpin: "앨범 아트 회전",
+    showLyrics: "가사",
+    darkMode: "다크 모드",
+    toggleLyricsTooltip: "가사 표시 또는 숨기기",
+    goTop: "맨 위로",
+    creatorTitle: "원작자",
+    creatorDesc: "이 YouTube Music Player 프로젝트의 원작자입니다.",
+    creatorBtn: "원작자",
+    visitRepo: "리포지토리 방문",
+    maintainerTitle: "포크 버전 관리자",
+    maintainerDesc: "향상된 기능이 포함된 <a href='https://github.com/Farwalker3/YouTube-Music-Player-Web' target='_blank'>이 포크 버전</a>의 관리자입니다.",
+    maintainerBtn: "포크 버전 관리자",
+    experimentalWindowTitle: "실험적 프로젝트",
+    experimentalWindowWarning: "⚠ 경고: 이 프로젝트는 불안정하거나 안전하지 않을 수 있습니다. 사용에 주의하세요.",
+    readExcelTitle: "Excel 파일 읽기 방법",
+    readApiKeyTitle: "API 키 읽기 방법",
+    viewBetaBtn: "베타 테스트 프로젝트 보기",
+    viewAlphaBtn: "알파 테스트 프로젝트 보기",
+    viewBetaTooltip: "베타 테스트 프로젝트 보기",
+    viewAlphaTooltip: "알파 테스트 프로젝트 보기",
+    attributionText: "원본 프로젝트:",
+    attributionEnhanced: "향상된 버전:",
+    attributionRepo: "원본 리포지토리",
+    languageLabel: "언어",
+    songAlreadyExists: "이 곡은 이미 플레이리스트에 있습니다!",
+    songAdded: "을(를) 플레이리스트에 추가했습니다!",
+    importFileTypeError: "JSON 데이터가 포함된 JSON 파일 또는 TXT 파일을 선택하세요.",
+    cacheCleared: "검색 캐시가 삭제되었습니다! 새 검색에서는 최신 결과를 가져옵니다.",
+    exportError: "플레이리스트를 내보내는 중 오류가 발생했습니다. 다시 시도하세요.",
+    importError: "플레이리스트를 가져오는 중 오류가 발생했습니다: ",
+    fileReadError: "파일을 읽는 중 오류가 발생했습니다. 다시 시도하세요.",
+    noLyricsLoaded: "불러온 가사가 없습니다.",
+    clearCacheConfirm: "검색 캐시를 삭제하시겠습니까? 저장된 모든 검색 결과가 삭제됩니다.",
+    importConfirm: "${count}곡을 가져오시겠습니까? 현재 플레이리스트가 교체됩니다.",
+    importSuccess: "${count}곡을 성공적으로 가져왔습니다!",
+    darkModeStatus: "다크 모드가 ${status}되었습니다.",
+    albumArtSpinStatus: "앨범 아트 회전이 ${status}되었습니다.",
+    lyricsPanelStatus: "가사 패널이 ${status}되었습니다.",
+    languageSet: "언어가 ${language}로 설정되었습니다.",
+    enabled: "활성화",
+    disabled: "비활성화",
+    chinese: "중국어",
+    english: "영어",
+    korean: "한국어",
+    addToPlaylist: "플레이리스트에 추가",
+    add: "추가",
+    invalidLink: "⚠ 잘못된 YouTube 링크입니다.",
+    duplicateSong: "⚠ 이 곡은 이미 플레이리스트에 있습니다!",
+    addedSong: (title, author) => `✅ "${title}" - ${author}을(를) 플레이리스트에 추가했습니다!`,
+    aboutTitle: "YouTube Music Player 정보",
+    aboutDescription: "YouTube를 음악 소스로 사용하는 기능이 풍부한 웹 기반 음악 플레이어입니다. 깔끔하고 직관적인 인터페이스에서 좋아하는 음악을 재생, 관리 및 정리할 수 있습니다.",
+    featuresTitle: "기능",
+    feature1: "YouTube 음악 재생",
+    feature2: "드래그 앤 드롭 플레이리스트 관리",
+    feature3: "자동 동기화 가사 표시",
+    feature4: "가사 번역",
+    feature5: "다크/라이트 모드",
+    feature6: "플레이리스트 내보내기/가져오기",
+    feature7: "볼륨 조절 및 재생 진행 바",
+    feature8: "다국어 지원 (English/中文/한국어)",
+    feature9: "자동 재생 및 반복 모드",
+    originalProjectTitle: "원본 프로젝트",
+    originalCreator: "원작자",
+    contributorsTitle: "기여자",
+    forkMaintainer: "포크 버전 관리자",
+    linksTitle: "링크",
+    originalRepository: "원본 리포지토리",
+    versionInfoTitle: "버전 정보",
+    version: "버전: ",
+    lastUpdated: "마지막 업데이트: ",
+    languages: "지원 언어: ",
+    experimentalFeatures: "실험적 기능",
+    settingsAboutTitle: "이 프로젝트 정보",
+    settingsAbout: "정보",
+    albumArtDisplay: "앨범 아트 표시:",
+    spin: "회전",
+    none: "없음",
+    video: "비디오",
+    youtubeApi403Error: "YouTube API 오류: 403 - 할당량 초과. API 키가 일일 한도에 도달했습니다. 내일 다시 시도하거나 다른 API 키를 사용하세요.",
+    translationStatus: "가사 번역이 ${status}되었습니다.",
+    enableLyricsTranslation: "가사 번역",
+    showOriginalFirstLabel: "원문 먼저 표시",
+    noResultsFound: "검색 결과가 없습니다.",
+    searchCache: "검색 캐시",
+    lyricsCache: "가사 캐시",
+    translationCache: "번역 캐시",
+    unknown: "알 수 없음",
+    viewDetails: "세부 정보 보기",
+    delete: "삭제",
+    noCacheItems: "캐시 항목이 없습니다",
+    totalItems: "총 항목 수",
+    totalSize: "총 크기",
+    selectAll: "모두 선택",
+    clearSelected: "선택 항목 삭제",
+    refresh: "새로고침",
+    clearAll: "모든 캐시 삭제",
+    cacheManagerTitle: "캐시 관리자",
+    cacheItems: "캐시 항목",
+    cacheKey: "캐시 키",
+    cacheType: "유형",
+    cacheSize: "크기",
+    cacheAge: "경과 시간",
+    actions: "작업",
+    confirmDeleteSelected: "선택한 {count}개 항목을 삭제하시겠습니까?",
+    confirmDeleteItem: "이 캐시 항목을 삭제하시겠습니까?",
+    confirmClearAllCache: "모든 캐시를 삭제하시겠습니까? 이 작업은 되돌릴 수 없습니다.",
+    noItemsSelected: "선택된 항목이 없습니다",
+    copiedToClipboard: "클립보드에 복사되었습니다!",
+    cacheItemDetails: "캐시 세부 정보",
+    cacheContent: "내용",
+    copyContent: "내용 복사",
+    deleteItem: "항목 삭제",
+    close: "닫기",
+    search: "검색",
+    lyrics: "가사",
+    translation: "번역",
+    all: "전체",
+    itemsSelected: "{count}개 항목 선택됨",
+    cacheStats: "캐시 통계",
+    expiresIn: "만료까지",
+    never: "없음",
+    expired: "만료됨",
+    valid: "유효",
+    invalid: "유효하지 않음",
+    en: "영어",
+    zh: "중국어",
+    ja: "일본어",
+    ko: "한국어",
   }
 };
 
@@ -3376,47 +3722,53 @@ let currentLang = localStorage.getItem("language");
 
 if (!currentLang) {
   const browserLang = navigator.language.toLowerCase();
-  if (browserLang.includes("zh")) {
+    if (browserLang.includes("zh")) {
     currentLang = "zh";
-    localStorage.setItem("language", "zh");
-  } else {
+    } else if (browserLang.includes("ja")) {
+    currentLang = "ja";
+    } else {
     currentLang = "en";
-    localStorage.setItem("language", "en");
-  }
+    }
+
+    localStorage.setItem("language", currentLang);
 }
 
 function updateLanguageButtons() {
-  const enBtn = document.getElementById("lang-en");
-  const zhBtn = document.getElementById("lang-zh");
+    const languageSelect = document.getElementById("languageSelect");
+    if (!languageSelect) return;
 
-  if (!enBtn || !zhBtn) return;
+    const t = translations[currentLang] || translations.en;
 
-  if (currentLang === "en") {
-    enBtn.classList.add("active");
-    zhBtn.classList.remove("active");
-  } else {
-    zhBtn.classList.add("active");
-    enBtn.classList.remove("active");
-  }
+    // Change dropdown option names using the current UI language
+    Array.from(languageSelect.options).forEach(option => {
+        option.textContent = t[option.value] || option.value;
+    });
+
+    // Show the currently selected language
+    languageSelect.value = currentLang;
 }
 
-document.getElementById("lang-en").addEventListener("click", () => {
-  currentLang = "en";
-  localStorage.setItem("language", "en");
-  applyLanguage();
-});
+function updateSupportedLanguages() {
+    const languageSelect = document.getElementById("languageSelect");
+    const supportedLanguages = document.getElementById("supportedLanguages");
 
-document.getElementById("lang-zh").addEventListener("click", () => {
-  currentLang = "zh";
-  localStorage.setItem("language", "zh");
-  applyLanguage();
-});
+    if (!languageSelect || !supportedLanguages) return;
 
-function applyLanguage(lang) {
+    const t = translations[currentLang] || translations.en;
+
+    // Read all languages that currently exist in the dropdown
+    supportedLanguages.textContent = Array.from(languageSelect.options)
+        .map(option => t[option.value] || option.value)
+        .join(" & ");
+}
+
+function applyLanguage(lang = currentLang) {
+    currentLang = translations[lang] ? lang : "en";
+    localStorage.setItem("language", currentLang);
+
+    const t = translations[currentLang];
     updateLanguageButtons();
-    currentLang = lang;
-    localStorage.setItem("language", lang);
-    const t = translations[lang];
+    updateSupportedLanguages();
 
     // 🎧 Player & Labels
     document.querySelector("h5.card-title i.bxs-music")?.nextSibling?.nodeValue && 
@@ -3708,17 +4060,8 @@ function applyLanguage(lang) {
     });
 }
 
-// 🌐 Language switch event
-document.getElementById("lang-en")?.addEventListener("click", () => {
-  applyLanguage("en");
-  document.getElementById("lang-en").classList.add("active");
-  document.getElementById("lang-zh").classList.remove("active");
-});
-
-document.getElementById("lang-zh")?.addEventListener("click", () => {
-  applyLanguage("zh");
-  document.getElementById("lang-zh").classList.add("active");
-  document.getElementById("lang-en").classList.remove("active");
+document.getElementById("languageSelect")?.addEventListener("change", function () {
+  applyLanguage(this.value);
 });
 
 // Apply saved language on page load
