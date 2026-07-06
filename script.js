@@ -177,15 +177,20 @@ function isCurrentLyricsJob(job) {
 }
 
 function requestLyricsForCurrentSong({ force = false } = {}) {
-    const videoId = actualSelectedVideoId || selectedVideoId;
-    const song = playlist.find(item => item.videoId === videoId);
+    const currentSong = getCurrentSongObject();
 
-    if (!song) return;
+    if (!currentSong || !isLyricsPageVisible()) {
+        return;
+    }
 
-    loadLyricsFor(song.songName, song.authorName, {
-        force,
-        videoId
-    });
+    loadLyricsFor(
+        currentSong.songName,
+        currentSong.authorName,
+        {
+            force,
+            videoId: currentSong.videoId
+        }
+    );
 }
 
 // Search Cache to minimize API calls for repeated searches
@@ -264,7 +269,9 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 
     function showSongListView() {
-        stopLyricsJobs();
+        if (!allowLyricsFetchWhenHidden && typeof stopLyricsJobs === "function") {
+            stopLyricsJobs();
+        }
         // Show song list
         songListContainer.classList.remove('d-none');
         playlistSearchContainer.classList.remove('d-none');
@@ -298,7 +305,7 @@ document.addEventListener('DOMContentLoaded', function() {
         showSongListBtn.classList.remove('active');
         showSongListBtn.classList.remove('btn-primary');
         showSongListBtn.classList.add('btn-outline-primary');
-        requestLyricsForCurrentSong();
+        requestLyricsForCurrentSong({ force: true });
     }
 });
 
@@ -5621,7 +5628,7 @@ async function fetchLyricsWithTranslation(title, artist, job) {
         };
         
         // Then translate in background if enabled
-        if (translationEnabled && !isTranslating) {
+        if (shouldTranslate && !isTranslating) {
             isTranslating = true;
             
             // Check for cached translation
