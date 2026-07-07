@@ -317,9 +317,10 @@ function loadPlaylist() {
     } else {
         // Default playlist if local storage is empty
         playlist = [
-            { videoId: 'IBWxJxQxSHE', songName: '≠ME', authorName: 'NOT EQUAL ME - Topic', albumArt: 'https://i.ytimg.com/vi/IBWxJxQxSHE/hqdefault.jpg' },
+            { videoId: 'oWRCXGvcU9s', songName: '愛くださいませ', authorName: 'NOT EQUAL ME', albumArt: 'https://i.ytimg.com/vi/oWRCXGvcU9s/hqdefault.jpg' },
+            { videoId: 'IBWxJxQxSHE', songName: '≠ME', authorName: 'NOT EQUAL ME - Topic', albumArt: 'https://i.ytimg.com/vi/IBWxJxQxSHE/hqdefault.jpg', lyricsTimeOffset: -3.0 },
             { videoId: 'bi__z02xRgo', songName: 'チョコレートメランコリー', authorName: 'NOT EQUAL ME - Topic', albumArt: 'https://i.ytimg.com/vi/bi__z02xRgo/hqdefault.jpg' },
-            { videoId: '2RdTOBmz6jY', songName: '排他的ファイター', authorName: 'NOT EQUAL ME - Topic', albumArt: 'https://i.ytimg.com/vi/2RdTOBmz6jY/hqdefault.jpg' },
+            { videoId: '2RdTOBmz6jY', songName: '排他的ファイター', authorName: 'NOT EQUAL ME - Topic', albumArt: 'https://i.ytimg.com/vi/2RdTOBmz6jY/hqdefault.jpg', lyricsTimeOffset: -5.5 },
             { videoId: 'TQ8WlA2GXbk', songName: 'Official髭男dism - Pretender［Official Video］', authorName: 'Official髭男dism', albumArt: 'https://i.ytimg.com/vi/TQ8WlA2GXbk/hqdefault.jpg' },
             { videoId: '0sDmhAItwbI', songName: 'Official髭男dism - Pretender (Acoustic ver.)［Official Video］', authorName: 'Official髭男dism', albumArt: 'https://i.ytimg.com/vi/0sDmhAItwbI/hqdefault.jpg', lyricsTimeOffset: 17.5 },
             { videoId: '22mOCjkwQjM', songName: 'Official髭男dism - Stand By You［Official Video］', authorName: 'Official髭男dism', albumArt: 'https://i.ytimg.com/vi/22mOCjkwQjM/hqdefault.jpg', lyricsTimeOffset: -2.0 },
