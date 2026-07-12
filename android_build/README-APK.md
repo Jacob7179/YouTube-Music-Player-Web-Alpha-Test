@@ -1,158 +1,251 @@
 # YouTube Music Player APK
 
-This folder wraps the web app with Capacitor so it can be built as an Android APK.
+This folder wraps the web app with Capacitor so it can be built and installed as an Android APK.
 
-## Auto Build
-```powershell
-cd android_build
-./build.bat
+## Requirements
+
+The Android project uses:
+
+- Node.js and npm
+- Java JDK 21
+- Android SDK Platform 35
+- Android Build Tools 35.0.0
+- Capacitor 7
+- Capacitor Filesystem 7
+- Capacitor Share 7
+- Capawesome File Picker 7.2.0
+
+The automatic build uses portable tools stored inside the `android_build` folder. A system-wide Java or Android SDK installation is not required.
+
+## Project Structure
+
+Important folders and files:
+
+```text
+android_build/
+├─ android/                 Generated native Android project
+├─ android-sdk/             Portable Android SDK
+├─ tools/
+│  ├─ jdk-21/              Portable Java JDK 21
+│  └─ nodejs/              Portable Node.js when required
+├─ www/                     Web files copied into the Android app
+├─ image_source/
+│  └─ res/                  Android icon and splash resources
+├─ build.bat                Automatic APK build
+├─ clean.bat                Build-folder cleanup
+├─ capacitor.config.json    Capacitor configuration
+├─ package.json             Node.js dependencies
+└─ package-lock.json        Locked dependency versions
 ```
 
-## Manual Build
+Keep `package-lock.json` in Git so the same dependency versions can be installed on different computers.
+
+## Automatic Build
+
+Open PowerShell or Command Prompt in the repository folder and run:
+
+```powershell
+cd android_build
+.\build.bat
+```
+
+The script will:
+
+1. Check or install Node.js.
+2. Install dependencies from `package-lock.json`.
+3. Check or install Java JDK 21.
+4. Check or install the Android SDK.
+5. Add the Android platform when it is missing.
+6. Create `android/local.properties`.
+7. Sync the web files and Capacitor plugins.
+8. Replace the Android icon and splash resources using `image_source\res`.
+9. Build the debug APK.
+
+The generated APK will be located at:
+
+```text
+android_build/android/app/build/outputs/apk/debug/app-debug.apk
+```
+
+## Quick Rebuild After Editing Web Files
+
+This is an optional faster rebuild method. Use it only after `build.bat` has completed successfully at least once and the `android`, `android-sdk`, and `tools` folders already exist.
+
+Use this section when you only changed web files such as HTML, CSS, JavaScript, images, or other content inside `www`. It syncs the updated web files into the existing Android project and rebuilds the APK without downloading the tools or reinstalling all dependencies.
+
+You may run `build.bat` instead at any time if you prefer the complete automatic process.
+
+After changing files inside `www`, run:
 
 ```powershell
 cd android_build
 
-# ============================================================
-# 1. Check Node.js / npm
-#    If npm is missing, download portable Node.js locally
-# ============================================================
-
-if (-not (Get-Command npm -ErrorAction SilentlyContinue)) {
-    Write-Host "npm not found. Downloading portable Node.js..."
-
-    $toolsDir = Join-Path (Get-Location) "tools"
-    $nodeDir = Join-Path $toolsDir "nodejs"
-
-    New-Item -ItemType Directory -Force -Path $toolsDir | Out-Null
-
-    $index = Invoke-RestMethod "https://nodejs.org/dist/index.json"
-    $lts = $index | Where-Object { $_.lts -ne $false } | Select-Object -First 1
-
-    $version = $lts.version
-    $zipName = "node-$version-win-x64.zip"
-    $url = "https://nodejs.org/dist/$version/$zipName"
-    $zipPath = Join-Path $toolsDir $zipName
-
-    Invoke-WebRequest -Uri $url -OutFile $zipPath
-
-    if (Test-Path $nodeDir) {
-        Remove-Item $nodeDir -Recurse -Force
-    }
-
-    Expand-Archive -Force $zipPath -DestinationPath $toolsDir
-
-    $extractedDir = Join-Path $toolsDir "node-$version-win-x64"
-    Move-Item $extractedDir $nodeDir
-
-    Remove-Item $zipPath -Force
-
-    $env:PATH = "$nodeDir;$env:PATH"
-}
-
-node -v
-npm -v
-
-# ============================================================
-# 2. Install Node.js dependencies
-# ============================================================
-
-npm install
-
-# ============================================================
-# 3. Download and install Android SDK locally
-# ============================================================
-
-$ErrorActionPreference = "Stop"
-
-$sdk = Join-Path (Get-Location) "android-sdk"
-$cmdlineToolsDir = Join-Path $sdk "cmdline-tools"
-$latestDir = Join-Path $cmdlineToolsDir "latest"
-$sdkManager = Join-Path $latestDir "bin\sdkmanager.bat"
-
-if (-not (Test-Path $sdkManager)) {
-    Write-Host "Android SDK command line tools not found. Downloading..."
-
-    New-Item -ItemType Directory -Force -Path $cmdlineToolsDir | Out-Null
-
-    Push-Location $sdk
-
-    Invoke-WebRequest `
-        -Uri "https://dl.google.com/android/repository/commandlinetools-win-14742923_latest.zip" `
-        -OutFile "cmdline-tools.zip"
-
-    Expand-Archive -Force "cmdline-tools.zip" -DestinationPath "cmdline-tools"
-
-    if (Test-Path ".\cmdline-tools\latest") {
-        Remove-Item ".\cmdline-tools\latest" -Recurse -Force
-    }
-
-    Move-Item ".\cmdline-tools\cmdline-tools" ".\cmdline-tools\latest"
-
-    Remove-Item "cmdline-tools.zip" -Force
-
-    Pop-Location
-}
-
-# Set Android SDK environment for this PowerShell session
-$env:ANDROID_HOME = $sdk
-$env:ANDROID_SDK_ROOT = $sdk
-$env:PATH = "$sdk\platform-tools;$sdk\cmdline-tools\latest\bin;$env:PATH"
-
-# Accept licenses
-cmd /c "for /l %i in (1,1,100) do @echo y" | & $sdkManager --sdk_root="$sdk" --licenses
-
-# Install required SDK packages
-& $sdkManager --sdk_root="$sdk" `
-    "platform-tools" `
-    "platforms;android-35" `
-    "build-tools;35.0.0"
-
-# ============================================================
-# 4. Add Android platform if missing
-# ============================================================
-
-if (-not (Test-Path ".\android")) {
-    npx cap add android
-}
-else {
-    Write-Host "Android platform already exists."
-}
-
-# ============================================================
-# 5. Create android/local.properties
-# ============================================================
-
-$sdkForGradle = $sdk.Replace("\", "\\")
-"sdk.dir=$sdkForGradle" | Set-Content -Encoding ASCII ".\android\local.properties"
-
-Get-Content ".\android\local.properties"
-
-# ============================================================
-# 6. Sync Capacitor files
-# ============================================================
+$env:JAVA_HOME = (Resolve-Path ".\tools\jdk-21")
+$env:PATH = "$env:JAVA_HOME\bin;$env:PATH"
+$env:ANDROID_HOME = (Resolve-Path ".\android-sdk")
+$env:ANDROID_SDK_ROOT = $env:ANDROID_HOME
 
 npx cap sync android
 
-# ============================================================
-# 7. Build APK
-# ============================================================
-
 cd android
-
-.\gradlew.bat clean
 .\gradlew.bat assembleDebug
 ```
 
-The debug APK will be created at:
+The updated APK will be created at:
 
 ```text
 android/app/build/outputs/apk/debug/app-debug.apk
 ```
 
-## Clean Folder
+## Verify the Java Version Used by Gradle
+
+From the `android_build\android` folder, run:
+
 ```powershell
-./clean.bat
+.\gradlew.bat --version
 ```
 
-The app still needs internet access for YouTube playback, YouTube search, lyrics, translation, and CDN-hosted styles/scripts.
+The output should show Java 21, for example:
+
+```text
+JVM: 21
+```
+
+If it shows Java 17 or an older version, run:
+
+```powershell
+cd android_build
+
+$env:JAVA_HOME = (Resolve-Path ".\tools\jdk-21")
+$env:PATH = "$env:JAVA_HOME\bin;$env:PATH"
+
+cd android
+.\gradlew.bat --stop
+.\gradlew.bat --version
+.\gradlew.bat clean
+.\gradlew.bat assembleDebug
+```
+
+## Install the Debug APK with ADB
+
+Enable Developer Options and USB debugging on the Android device, connect it to the computer, and run:
+
+```powershell
+cd android_build
+.\android-sdk\platform-tools\adb.exe devices
+.\android-sdk\platform-tools\adb.exe install -r .\android\app\build\outputs\apk\debug\app-debug.apk
+```
+
+The `-r` option replaces the installed debug version while keeping its application data.
+
+## Native Playlist Import and Export
+
+The Android app uses these native plugins:
+
+```text
+@capacitor/filesystem
+@capacitor/share
+@capawesome/capacitor-file-picker
+```
+
+After adding or changing a native plugin, always run:
+
+```powershell
+npm install
+npx cap sync android
+```
+
+Then rebuild the APK.
+
+GitHub Pages, Vercel, and normal browsers continue using the browser-based import and download functions.
+
+## Common Errors
+
+### Java 21 is missing
+
+```text
+Cannot find a Java installation on your machine matching this task's
+requirements: {languageVersion=21}
+```
+
+Run `build.bat` again. The portable JDK should exist at:
+
+```text
+android_build/tools/jdk-21
+```
+
+Then stop the old Gradle daemon and rebuild.
+
+### Android SDK location is missing
+
+```text
+SDK location not found
+```
+
+Confirm that this file exists:
+
+```text
+android_build/android/local.properties
+```
+
+Its content should point to the local SDK, for example:
+
+```text
+sdk.dir=C:\\path\\to\\android_build\\android-sdk
+```
+
+### A Capacitor plugin is missing
+
+Run:
+
+```powershell
+cd android_build
+npm ci
+npx cap sync android
+```
+
+Then rebuild the APK.
+
+### The tools folder cannot be deleted
+
+The OpenJDK Platform binary or a Gradle daemon may still be using the portable JDK.
+
+Run:
+
+```powershell
+cd android_build\android
+.\gradlew.bat --stop
+```
+
+Then run `clean.bat` again. The current cleanup script also attempts to stop Java and Node.js processes launched from the project's `tools` folder.
+
+### flatDir warnings
+
+Messages such as this are warnings, not build failures:
+
+```text
+WARNING: Using flatDir should be avoided because it doesn't support any meta-data formats.
+```
+
+Check the final Gradle error below the warnings to identify the real cause.
+
+## Clean Generated Folders
+
+Run:
+
+```powershell
+cd android_build
+.\clean.bat
+```
+
+The cleanup script removes generated build folders and asks before deleting `android-sdk`. Keeping `android-sdk` makes the next build faster.
+
+## Internet Requirement
+
+The app still requires internet access for:
+
+- YouTube playback
+- YouTube search
+- Lyrics
+- Translation
+- CDN-hosted styles or scripts
